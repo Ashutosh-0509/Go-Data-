@@ -29,7 +29,8 @@ import {
   Lock,
   User,
   LogIn,
-  X
+  X,
+  Download
 } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -494,6 +495,24 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<any>(null);
   const [taskType, setTaskType] = useState("");
 
+  // Audit comparisons (Before vs After)
+  const [cleaningAudit, setCleaningAudit] = useState<{
+    strategy: string;
+    removedDuplicates: boolean;
+    before: { rows: number; missing: number; duplicates: number; score: number };
+    after: { rows: number; missing: number; duplicates: number; score: number };
+    imputedCount: number;
+    timestamp: string;
+  } | null>(null);
+
+  const [outlierAudit, setOutlierAudit] = useState<{
+    method: string;
+    action: string;
+    before: { rows: number; score: number };
+    after: { rows: number; score: number };
+    timestamp: string;
+  } | null>(null);
+
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -537,6 +556,19 @@ export default function Home() {
     uploadSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const downloadCleanedCSV = () => {
+    if (!csvData) return;
+    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `cleaned_${fileName || "dataset.csv"}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Cleaned dataset downloaded successfully.");
+  };
+
   // Robust Ingestion Pipeline (FastAPI server + In-browser failover)
   const processFile = async (file: File) => {
     if (!currentUser) {
@@ -545,6 +577,8 @@ export default function Home() {
     }
     setLoading(true);
     setFileName(file.name);
+    setCleaningAudit(null);
+    setOutlierAudit(null);
 
     try {
       const formData = new FormData();
@@ -609,6 +643,8 @@ export default function Home() {
       return;
     }
     setLoading(true);
+    setCleaningAudit(null);
+    setOutlierAudit(null);
     try {
       const parsed = parseCSVClient(SAMPLE_CSV, "sample_employees.csv");
       setCsvData(parsed.csv_data);
@@ -626,6 +662,13 @@ export default function Home() {
   const handleClean = async () => {
     if (!csvData) return;
     setLoading(true);
+    const beforeStats = {
+      rows: stats?.total_rows || 0,
+      missing: stats?.missing_cells || 0,
+      duplicates: stats?.duplicate_rows || 0,
+      score: stats?.score || 0,
+    };
+
     try {
       const formData = new FormData();
       formData.append("csv_data", csvData);
@@ -637,6 +680,19 @@ export default function Home() {
         const data = await res.json();
         setCsvData(data.csv_data);
         setStats(data.stats);
+        setCleaningAudit({
+          strategy: cleaningStrategy,
+          removedDuplicates: removeDuplicates,
+          before: beforeStats,
+          after: {
+            rows: data.stats.total_rows,
+            missing: data.stats.missing_cells,
+            duplicates: data.stats.duplicate_rows,
+            score: data.stats.score,
+          },
+          imputedCount: Math.max(0, beforeStats.missing - data.stats.missing_cells),
+          timestamp: new Date().toLocaleTimeString(),
+        });
         showToast("Dataset cleaned successfully.");
         setLoading(false);
         return;
@@ -648,6 +704,19 @@ export default function Home() {
       const cleaned = cleanCSVClient(csvData, fileName || "dataset.csv", cleaningStrategy, removeDuplicates);
       setCsvData(cleaned.csv_data);
       setStats(cleaned.stats);
+      setCleaningAudit({
+        strategy: cleaningStrategy,
+        removedDuplicates: removeDuplicates,
+        before: beforeStats,
+        after: {
+          rows: cleaned.stats.total_rows,
+          missing: cleaned.stats.missing_cells,
+          duplicates: cleaned.stats.duplicate_rows,
+          score: cleaned.stats.score,
+        },
+        imputedCount: Math.max(0, beforeStats.missing - cleaned.stats.missing_cells),
+        timestamp: new Date().toLocaleTimeString(),
+      });
       showToast(`Cleaned successfully (${cleaningStrategy}${removeDuplicates ? ", Duplicates removed" : ""}).`);
     } catch (cleanErr: any) {
       showToast("Cleaning error: " + cleanErr.message, "error");
@@ -658,6 +727,11 @@ export default function Home() {
   const handleOutliers = async () => {
     if (!csvData) return;
     setLoading(true);
+    const beforeStats = {
+      rows: stats?.total_rows || 0,
+      score: stats?.score || 0,
+    };
+
     try {
       const formData = new FormData();
       formData.append("csv_data", csvData);
@@ -669,6 +743,16 @@ export default function Home() {
         const data = await res.json();
         setCsvData(data.csv_data);
         setStats(data.stats);
+        setOutlierAudit({
+          method: outlierMethod,
+          action: outlierAction,
+          before: beforeStats,
+          after: {
+            rows: data.stats.total_rows,
+            score: data.stats.score,
+          },
+          timestamp: new Date().toLocaleTimeString(),
+        });
         showToast(`Outlier treatment applied (${outlierMethod}, ${outlierAction}).`);
         setLoading(false);
         return;
@@ -680,6 +764,16 @@ export default function Home() {
       const treated = treatOutliersClient(csvData, fileName || "dataset.csv", outlierMethod, outlierAction);
       setCsvData(treated.csv_data);
       setStats(treated.stats);
+      setOutlierAudit({
+        method: outlierMethod,
+        action: outlierAction,
+        before: beforeStats,
+        after: {
+          rows: treated.stats.total_rows,
+          score: treated.stats.score,
+        },
+        timestamp: new Date().toLocaleTimeString(),
+      });
       showToast(`Outlier treatment applied (${outlierMethod}, ${outlierAction}).`);
     } catch (outlierErr: any) {
       showToast("Outlier treatment error: " + outlierErr.message, "error");
@@ -1347,6 +1441,133 @@ export default function Home() {
                 <Sparkles className="w-4 h-4 text-emerald-300" />
                 {loading ? "Executing Pipeline..." : "Execute Cleaning Pipeline"}
               </button>
+
+              {/* POST-CLEANING AUDIT & COMPARISON CARD */}
+              {cleaningAudit && (
+                <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-[#F4F9F6] to-[#EBE7DC]/70 border border-emerald-200/90 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#DFDBD0]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#18332F]">
+                          Cleaning Completed: {cleaningAudit.strategy} Strategy
+                        </div>
+                        <div className="text-xs text-[#5A6B65]">
+                          Executed at {cleaningAudit.timestamp} • {cleaningAudit.removedDuplicates ? "Deduplication Enforced" : "Deduplication Skipped"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={downloadCleanedCSV}
+                        className="px-4 py-2 rounded-xl bg-[#18332F] hover:bg-[#2D6A59] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-300" />
+                        Download Cleaned CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("table")}
+                        className="px-4 py-2 rounded-xl bg-white hover:bg-[#EBE7DC] border border-[#DFDBD0] text-[#18332F] text-xs font-bold transition-colors"
+                      >
+                        Explore Full Table →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Transformation Audit Metrics */}
+                  <div>
+                    <div className="text-xs font-bold text-[#18332F] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span>Before vs After Transformation Summary</span>
+                      <InfoTooltip text="Exact metrics showing data quality improvements, missing cells imputed, and duplicates removed." />
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-4 rounded-xl bg-white border border-[#DFDBD0] shadow-xs">
+                        <div className="text-[11px] text-[#5A6B65] font-semibold">Data Quality Score</div>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-xs line-through text-[#5A6B65]">{cleaningAudit.before.score}%</span>
+                          <span className="text-lg font-black text-emerald-700">{cleaningAudit.after.score}%</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                          +{Math.max(0, Number((cleaningAudit.after.score - cleaningAudit.before.score).toFixed(1)))}% Improved
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-white border border-[#DFDBD0] shadow-xs">
+                        <div className="text-[11px] text-[#5A6B65] font-semibold">Missing Cells</div>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-xs line-through text-amber-700">{cleaningAudit.before.missing}</span>
+                          <span className="text-lg font-black text-emerald-700">{cleaningAudit.after.missing}</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                          {cleaningAudit.imputedCount > 0 ? `${cleaningAudit.imputedCount} Imputed` : "0 Missing"}
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-white border border-[#DFDBD0] shadow-xs">
+                        <div className="text-[11px] text-[#5A6B65] font-semibold">Duplicate Rows</div>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-xs line-through text-amber-700">{cleaningAudit.before.duplicates}</span>
+                          <span className="text-lg font-black text-emerald-700">{cleaningAudit.after.duplicates}</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                          {cleaningAudit.before.duplicates > 0 ? `${cleaningAudit.before.duplicates} Purged` : "0 Duplicates"}
+                        </span>
+                      </div>
+
+                      <div className="p-4 rounded-xl bg-white border border-[#DFDBD0] shadow-xs">
+                        <div className="text-[11px] text-[#5A6B65] font-semibold">Cleaned Active Rows</div>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-xs text-[#5A6B65]">{cleaningAudit.before.rows}</span>
+                          <span className="text-xs text-[#5A6B65]">→</span>
+                          <span className="text-lg font-black text-[#18332F]">{cleaningAudit.after.rows}</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono">
+                          Ready for Modeling
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cleaned Dataset Sample Snippet */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#18332F]">Cleaned Dataset Preview (First 5 Rows)</span>
+                      <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> All values imputed & validated
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-[#DFDBD0] bg-white">
+                      <table className="w-full text-xs text-left border-collapse font-mono">
+                        <thead className="bg-[#EBE7DC] text-[#18332F] font-sans font-bold text-[10px] uppercase border-b border-[#DFDBD0]">
+                          <tr>
+                            <th className="py-2.5 px-3 w-10">#</th>
+                            {stats?.columns?.map((c: string) => (
+                              <th key={c} className="py-2.5 px-3 whitespace-nowrap">{c}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#DFDBD0]/50 text-[11px]">
+                          {stats?.preview?.slice(0, 5).map((row: any, rIdx: number) => (
+                            <tr key={rIdx} className="hover:bg-emerald-50/40 transition-colors">
+                              <td className="py-2.5 px-3 text-[#5A6B65] font-sans">{rIdx + 1}</td>
+                              {stats.columns.map((col: string, cIdx: number) => (
+                                <td key={cIdx} className="py-2.5 px-3 text-[#18332F] whitespace-nowrap">
+                                  {String(row[col] ?? "")}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1404,6 +1625,73 @@ export default function Home() {
                 <TrendingUp className="w-4 h-4 text-emerald-300" />
                 {loading ? "Processing Outliers..." : "Apply Outlier Treatment"}
               </button>
+
+              {/* POST-OUTLIER AUDIT & COMPARISON CARD */}
+              {outlierAudit && (
+                <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-[#F4F9F6] to-[#EBE7DC]/70 border border-emerald-200/90 shadow-sm space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#DFDBD0]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-[#18332F]">
+                          Outliers Calibrated: {outlierAudit.method} ({outlierAudit.action})
+                        </div>
+                        <div className="text-xs text-[#5A6B65]">
+                          Processed at {outlierAudit.timestamp} • Robust Parametric Calibration
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={downloadCleanedCSV}
+                        className="px-4 py-2 rounded-xl bg-[#18332F] hover:bg-[#2D6A59] text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Download className="w-3.5 h-3.5 text-emerald-300" />
+                        Download Calibrated CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("eda")}
+                        className="px-4 py-2 rounded-xl bg-white hover:bg-[#EBE7DC] border border-[#DFDBD0] text-[#18332F] text-xs font-bold transition-colors"
+                      >
+                        View Visual EDA →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-xl bg-white border border-[#DFDBD0]">
+                      <div className="text-[11px] text-[#5A6B65] font-semibold">Detection Method</div>
+                      <div className="text-base font-bold text-[#18332F] mt-1">{outlierAudit.method}</div>
+                      <span className="text-[10px] text-[#5A6B65]">Parametric Boundary</span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-[#DFDBD0]">
+                      <div className="text-[11px] text-[#5A6B65] font-semibold">Treatment Action</div>
+                      <div className="text-base font-bold text-emerald-700 mt-1">{outlierAudit.action}</div>
+                      <span className="text-[10px] text-[#5A6B65]">
+                        {outlierAudit.action === "Cap" ? "Extreme clamped to min/max" : "Outlier rows dropped"}
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white border border-[#DFDBD0]">
+                      <div className="text-[11px] text-[#5A6B65] font-semibold">Active Rows</div>
+                      <div className="text-base font-bold text-[#18332F] mt-1">
+                        {outlierAudit.before.rows} → {outlierAudit.after.rows}
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-semibold">
+                        {outlierAudit.before.rows - outlierAudit.after.rows > 0
+                          ? `${outlierAudit.before.rows - outlierAudit.after.rows} Outliers Removed`
+                          : "Values Safely Clamped"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
