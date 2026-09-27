@@ -1846,36 +1846,95 @@ export default function Home() {
                 </button>
               </div>
 
-              {leaderboard && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-[#18332F] uppercase tracking-wider">
-                      Model Leaderboard ({taskType})
-                    </h4>
-                    <span className="text-xs font-bold text-[#2D6A59] bg-[#2D6A59]/15 px-3 py-1 rounded-full">
-                      Best: {leaderboard[0]?.model}
+              {leaderboard && leaderboard.length > 0 && (
+                <div className="space-y-4 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-[#18332F] uppercase tracking-wider">
+                        Model Leaderboard ({taskType || "Supervised"})
+                      </h4>
+                      <InfoTooltip text="Models evaluated on unseen 20% test data. Highest scoring model is automatically ranked #1." />
+                    </div>
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full flex items-center gap-1">
+                      <span>🏆 Best Model:</span>
+                      <strong className="text-[#18332F]">{leaderboard[0]?.Model || leaderboard[0]?.model || "Random Forest"}</strong>
                     </span>
                   </div>
 
-                  <div className="overflow-x-auto rounded-xl border border-[#DFDBD0]">
-                    <table className="w-full text-xs text-left border-collapse">
-                      <thead className="bg-[#EBE7DC] border-b border-[#DFDBD0]">
+                  <div className="overflow-x-auto rounded-xl border border-[#DFDBD0] bg-white">
+                    <table className="w-full text-xs text-left border-collapse font-mono">
+                      <thead className="bg-[#EBE7DC] border-b border-[#DFDBD0] font-sans text-[11px] font-bold text-[#18332F]">
                         <tr>
-                          <th className="p-3 font-bold text-[#18332F]">Rank</th>
-                          <th className="p-3 font-bold text-[#18332F]">Algorithm</th>
-                          <th className="p-3 font-bold text-[#18332F]">Metric</th>
-                          <th className="p-3 font-bold text-[#18332F]">Score</th>
+                          <th className="p-3 w-16">Rank</th>
+                          <th className="p-3">Algorithm</th>
+                          {taskType === "Classification" || (!taskType && (leaderboard[0]?.Accuracy !== undefined || leaderboard[0]?.accuracy !== undefined)) ? (
+                            <>
+                              <th className="p-3">Accuracy</th>
+                              <th className="p-3">Precision</th>
+                              <th className="p-3">Recall</th>
+                              <th className="p-3">F1-Score</th>
+                            </>
+                          ) : (
+                            <>
+                              <th className="p-3">R² Score</th>
+                              <th className="p-3">RMSE</th>
+                              <th className="p-3">MAE</th>
+                            </>
+                          )}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#DFDBD0]/50 font-mono">
-                        {leaderboard.map((m: any, i: number) => (
-                          <tr key={i} className={i === 0 ? "bg-emerald-50/70 font-bold" : ""}>
-                            <td className="p-3">{i === 0 ? "🥇 #1" : `#${i + 1}`}</td>
-                            <td className="p-3 font-sans font-semibold text-[#18332F]">{m.model}</td>
-                            <td className="p-3 text-[#5A6B65]">{m.metric}</td>
-                            <td className="p-3 text-[#2D6A59] font-bold">{m.score}</td>
-                          </tr>
-                        ))}
+                      <tbody className="divide-y divide-[#DFDBD0]/50 text-[11px]">
+                        {leaderboard.map((m: any, i: number) => {
+                          const modelName = m.Model || m.model || "Algorithm";
+                          const isBest = i === 0;
+                          const isClassification = taskType === "Classification" || (!taskType && (m.Accuracy !== undefined || m.accuracy !== undefined));
+
+                          return (
+                            <tr key={i} className={`hover:bg-[#DFDBD0]/20 transition-colors ${isBest ? "bg-emerald-50/80 font-bold" : ""}`}>
+                              <td className="p-3">
+                                {isBest ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                    🥇 #1
+                                  </span>
+                                ) : (
+                                  <span className="text-[#5A6B65]">#{i + 1}</span>
+                                )}
+                              </td>
+                              <td className="p-3 font-sans font-bold text-[#18332F] whitespace-nowrap">
+                                {modelName}
+                              </td>
+
+                              {isClassification ? (
+                                <>
+                                  <td className="p-3 text-emerald-700 font-bold">
+                                    {m.Accuracy !== undefined ? `${(Number(m.Accuracy) * 100).toFixed(1)}%` : m.accuracy !== undefined ? `${(Number(m.accuracy) * 100).toFixed(1)}%` : m.score || "—"}
+                                  </td>
+                                  <td className="p-3 text-[#18332F]">
+                                    {m.Precision !== undefined ? (Number(m.Precision) * 100).toFixed(1) + "%" : m.precision !== undefined ? (Number(m.precision) * 100).toFixed(1) + "%" : "—"}
+                                  </td>
+                                  <td className="p-3 text-[#18332F]">
+                                    {m.Recall !== undefined ? (Number(m.Recall) * 100).toFixed(1) + "%" : m.recall !== undefined ? (Number(m.recall) * 100).toFixed(1) + "%" : "—"}
+                                  </td>
+                                  <td className="p-3 text-[#2D6A59] font-bold">
+                                    {m.F1_Score !== undefined ? (Number(m.F1_Score) * 100).toFixed(1) + "%" : m.f1_score !== undefined ? (Number(m.f1_score) * 100).toFixed(1) + "%" : "—"}
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="p-3 text-emerald-700 font-bold">
+                                    {m.R2_Score !== undefined ? Number(m.R2_Score).toFixed(3) : m.r2_score !== undefined ? Number(m.r2_score).toFixed(3) : m.score || "—"}
+                                  </td>
+                                  <td className="p-3 text-[#18332F]">
+                                    {m.RMSE !== undefined ? Number(m.RMSE).toFixed(2) : m.rmse !== undefined ? Number(m.rmse).toFixed(2) : "—"}
+                                  </td>
+                                  <td className="p-3 text-[#2D6A59] font-bold">
+                                    {m.MAE !== undefined ? Number(m.MAE).toFixed(2) : m.mae !== undefined ? Number(m.mae).toFixed(2) : "—"}
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

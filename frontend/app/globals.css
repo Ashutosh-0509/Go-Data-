@@ -17,12 +17,11 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism Classes */
+/* Solid Crisp Navbar */
 .glass-nav {
-  background: rgba(243, 240, 230, 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(223, 219, 208, 0.7);
+  background: #F3F0E6;
+  border-bottom: 1px solid #DFDBD0;
+  box-shadow: 0 2px 10px rgba(24, 51, 47, 0.04);
 }
 
 .glass-card {
