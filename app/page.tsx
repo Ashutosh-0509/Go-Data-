@@ -1,32 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [csvData, setCsvData] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("preview");
   const [loading, setLoading] = useState(false);
+  
+  // Cleaning State
   const [cleaningStrategy, setCleaningStrategy] = useState("Mean");
   const [removeDuplicates, setRemoveDuplicates] = useState(false);
+
+  // Outlier State
+  const [outlierMethod, setOutlierMethod] = useState("Z-score");
+  const [outlierAction, setOutlierAction] = useState("Cap");
+
+  // EDA State
+  const [edaColumn, setEdaColumn] = useState("");
+  const [edaData, setEdaData] = useState<any>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
-    
     const formData = new FormData();
     formData.append("file", file);
 
     setLoading(true);
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok) {
         setCsvData(data.csv_data);
         setStats(data.stats);
+        if (data.stats.numeric_cols?.length > 0) {
+            setEdaColumn(data.stats.numeric_cols[0]);
+        }
       } else {
         alert("Error: " + data.detail);
       }
@@ -39,17 +48,13 @@ export default function Home() {
   const handleClean = async () => {
     if (!csvData) return;
     setLoading(true);
-    
     const formData = new FormData();
     formData.append("csv_data", csvData);
     formData.append("strategy", cleaningStrategy);
     formData.append("remove_duplicates", removeDuplicates.toString());
 
     try {
-      const res = await fetch("/api/clean", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/clean", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok) {
         setCsvData(data.csv_data);
@@ -57,6 +62,55 @@ export default function Home() {
         alert("Data cleaned successfully!");
       } else {
         alert("Error: " + data.detail);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
+
+  const handleOutliers = async () => {
+    if (!csvData) return;
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("csv_data", csvData);
+    formData.append("method", outlierMethod);
+    formData.append("action", outlierAction);
+
+    try {
+      const res = await fetch("/api/outliers", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setCsvData(data.csv_data);
+        setStats(data.stats);
+        alert("Outliers handled successfully!");
+      } else {
+        alert("Error: " + data.detail);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === "eda" && csvData && edaColumn) {
+        fetchEda();
+    }
+  }, [activeTab, edaColumn]);
+
+  const fetchEda = async () => {
+    if (!csvData) return;
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("csv_data", csvData);
+    formData.append("column", edaColumn);
+
+    try {
+      const res = await fetch("/api/eda", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setEdaData(data);
       }
     } catch (err) {
       console.error(err);
@@ -87,12 +141,6 @@ export default function Home() {
                 <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} disabled={loading} />
               </label>
             </div>
-            
-            <div className="flex gap-12 mt-8 pt-6 border-t border-[#E5E2D9] text-sm text-[#5A6B65]">
-              <div><span className="text-[#2D6A59] mr-2">✓</span>Nothing is uploaded to external servers</div>
-              <div><span className="text-[#2D6A59] mr-2">✓</span>Original is left untouched</div>
-              <div><span className="text-[#2D6A59] mr-2">✓</span>Handles missing data</div>
-            </div>
           </div>
         </div>
       </div>
@@ -118,10 +166,10 @@ export default function Home() {
       </div>
 
       <div className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm border border-[#E5E2D9] p-8 min-h-[80vh]">
+        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-sm border border-[#E5E2D9] p-8 min-h-[80vh] relative">
           
           {loading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-2xl z-10">
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl z-10">
               <div className="text-xl font-bold text-[#18332F]">Processing...</div>
             </div>
           )}
@@ -166,48 +214,126 @@ export default function Home() {
           {activeTab === "cleaning" && (
             <div>
               <h2 className="text-2xl font-bold text-[#18332F] border-b-2 border-[#18332F] pb-2 mb-6">Data Cleaning</h2>
-              
               <div className="grid grid-cols-2 gap-8">
                 <div>
                   <label className="block text-sm font-bold text-[#18332F] mb-2">Missing Value Strategy</label>
-                  <select 
-                    value={cleaningStrategy} 
-                    onChange={e => setCleaningStrategy(e.target.value)}
-                    className="w-full p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2D6A59]"
-                  >
+                  <select value={cleaningStrategy} onChange={e => setCleaningStrategy(e.target.value)} className="w-full p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#2D6A59]">
                     <option value="Mean">Mean (Numeric) / Mode (Categorical)</option>
                     <option value="Median">Median (Numeric) / Mode (Categorical)</option>
                     <option value="Mode">Mode (All Columns)</option>
                     <option value="Drop rows">Drop Rows with Missing Values</option>
                   </select>
                 </div>
-                
-                <div className="flex items-center">
+                <div className="flex items-center pt-6">
                   <label className="flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={removeDuplicates} 
-                      onChange={e => setRemoveDuplicates(e.target.checked)}
-                      className="w-5 h-5 rounded border-[#DFDBD0] text-[#18332F] focus:ring-[#2D6A59]"
-                    />
+                    <input type="checkbox" checked={removeDuplicates} onChange={e => setRemoveDuplicates(e.target.checked)} className="w-5 h-5 rounded border-[#DFDBD0]" />
                     <span className="ml-3 text-[#18332F] font-medium">Remove Duplicate Rows</span>
                   </label>
                 </div>
               </div>
-              
-              <button 
-                onClick={handleClean}
-                className="mt-8 bg-[#18332F] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#2D6A59] transition-colors"
-              >
-                Apply Cleaning
-              </button>
+              <button onClick={handleClean} className="mt-8 bg-[#18332F] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#2D6A59] transition-colors">Apply Cleaning</button>
             </div>
           )}
-          
-          {(activeTab === "outliers" || activeTab === "eda") && (
-            <div className="text-center py-20">
-              <h3 className="text-2xl font-bold text-[#18332F] mb-4">{activeTab === "outliers" ? "Outlier Detection" : "Exploratory Data Analysis"}</h3>
-              <p className="text-[#5A6B65]">This section is under construction in the new Next.js architecture.</p>
+
+          {activeTab === "outliers" && (
+            <div>
+              <h2 className="text-2xl font-bold text-[#18332F] border-b-2 border-[#18332F] pb-2 mb-6">Outlier Detection</h2>
+              <div className="grid grid-cols-2 gap-8">
+                <div>
+                  <label className="block text-sm font-bold text-[#18332F] mb-2">Detection Method</label>
+                  <select value={outlierMethod} onChange={e => setOutlierMethod(e.target.value)} className="w-full p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none">
+                    <option value="Z-score">Z-score (Standard Deviation)</option>
+                    <option value="IQR">IQR (Interquartile Range)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-[#18332F] mb-2">Action to Take</label>
+                  <select value={outlierAction} onChange={e => setOutlierAction(e.target.value)} className="w-full p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none">
+                    <option value="Cap">Cap Values (Clip to limits)</option>
+                    <option value="Remove">Remove Rows with Outliers</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={handleOutliers} className="mt-8 bg-[#18332F] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#2D6A59] transition-colors">Apply Outlier Handling</button>
+            </div>
+          )}
+
+          {activeTab === "eda" && (
+            <div>
+              <h2 className="text-2xl font-bold text-[#18332F] border-b-2 border-[#18332F] pb-2 mb-6">Exploratory Data Analysis</h2>
+              
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-[#18332F] mb-2">Select Feature for Histogram</label>
+                <select value={edaColumn} onChange={e => setEdaColumn(e.target.value)} className="w-1/2 p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none">
+                  {stats?.numeric_cols.map((col: string) => (
+                    <option key={col} value={col}>{col}</option>
+                  ))}
+                </select>
+              </div>
+
+              {edaData?.histogram && (
+                <div className="mb-12">
+                  <h3 className="text-lg font-bold text-[#18332F] mb-4">Histogram of {edaColumn}</h3>
+                  <div className="h-64 flex items-end gap-1 border-b-2 border-l-2 border-[#DFDBD0] pb-2 pl-2">
+                    {edaData.histogram.map((h: any, i: number) => {
+                      const maxCount = Math.max(...edaData.histogram.map((d: any) => d.count));
+                      const height = maxCount === 0 ? 0 : (h.count / maxCount) * 100;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center group relative">
+                          <div 
+                            className="w-full bg-[#2D6A59] hover:bg-[#18332F] transition-all rounded-t-sm" 
+                            style={{ height: `${height}%`, minHeight: height > 0 ? '4px' : '0' }}
+                          >
+                             <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-[#18332F] text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-20">
+                                {h.bin}: {h.count}
+                             </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="flex justify-between text-xs text-[#5A6B65] mt-2 px-2">
+                     <span>{edaData.histogram[0]?.bin.split('-')[0]}</span>
+                     <span>{edaData.histogram[edaData.histogram.length-1]?.bin.split('-')[1]}</span>
+                  </div>
+                </div>
+              )}
+
+              {edaData?.correlation && (
+                <div>
+                  <h3 className="text-lg font-bold text-[#18332F] mb-4">Correlation Matrix (Numeric Features)</h3>
+                  <div className="overflow-x-auto rounded-xl border border-[#DFDBD0]">
+                    <table className="w-full text-xs text-center">
+                      <thead>
+                        <tr>
+                          <th className="p-2 bg-[#EBE7DC]"></th>
+                          {edaData.numeric_cols.map((col: string) => <th key={col} className="p-2 bg-[#EBE7DC] font-bold text-[#18332F] max-w-[100px] truncate" title={col}>{col}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {edaData.numeric_cols.map((rowCol: string) => (
+                          <tr key={rowCol}>
+                            <th className="p-2 bg-[#EBE7DC] font-bold text-[#18332F] text-left max-w-[100px] truncate" title={rowCol}>{rowCol}</th>
+                            {edaData.numeric_cols.map((col: string) => {
+                               const val = edaData.correlation[rowCol][col];
+                               // Calculate opacity based on correlation strength (-1 to 1)
+                               const intensity = Math.abs(val);
+                               const color = val > 0 ? `rgba(45, 106, 89, ${intensity})` : `rgba(200, 50, 50, ${intensity})`;
+                               const textColor = intensity > 0.5 ? 'white' : 'black';
+                               return (
+                                 <td key={col} className="p-2 border border-[#DFDBD0]" style={{ backgroundColor: color, color: textColor }}>
+                                   {val.toFixed(2)}
+                                 </td>
+                               )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 

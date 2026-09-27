@@ -53,7 +53,6 @@ async def upload_file(file: UploadFile = File(...)):
         else:
             raise HTTPException(status_code=400, detail="Unsupported file format")
         
-        # Convert back to CSV string for state management
         csv_str = df.to_csv(index=False)
         stats_data = get_stats(df)
         
@@ -102,5 +101,63 @@ async def clean_data(csv_data: str = Form(...), strategy: str = Form(...), remov
         csv_str = df.to_csv(index=False)
         
         return {"stats": stats_data, "csv_data": csv_str}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/outliers")
+async def handle_outliers(csv_data: str = Form(...), method: str = Form(...), action: str = Form(...)):
+    try:
+        df = pd.read_csv(io.StringIO(csv_data))
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        if not numeric_cols:
+            return {"stats": get_stats(df), "csv_data": csv_data}
+            
+        if method == "Z-score":
+            z_scores = np.abs(stats.zscore(df[numeric_cols].fillna(0)))
+            outliers = (z_scores > 3)
+        else: # IQR
+            Q1 = df[numeric_cols].quantile(0.25)
+            Q3 = df[numeric_cols].quantile(0.75)
+            IQR = Q3 - Q1
+            outliers = ((df[numeric_cols] < (Q1 - 1.5 * IQR)) | (df[numeric_cols] > (Q3 + 1.5 * IQR)))
+            
+        if action == "Remove":
+            df = df[~outliers.any(axis=1)]
+        elif action == "Cap":
+            for col in numeric_cols:
+                if method == "Z-score":
+                    mean = df[col].mean()
+                    std = df[col].std()
+                    lower, upper = mean - 3*std, mean + 3*std
+                else:
+                    q1 = df[col].quantile(0.25)
+                    q3 = df[col].quantile(0.75)
+                    iqr = q3 - q1
+                    lower, upper = q1 - 1.5*iqr, q3 + 1.5*iqr
+                df[col] = np.clip(df[col], lower, upper)
+                
+        df = df.reset_index(drop=True)
+        stats_data = get_stats(df)
+        csv_str = df.to_csv(index=False)
+        return {"stats": stats_data, "csv_data": csv_str}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/eda")
+async def get_eda(csv_data: str = Form(...), column: str = Form(...)):
+    try:
+        df = pd.read_csv(io.StringIO(csv_data))
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        hist_data = []
+        if column in numeric_cols:
+            col_data = df[column].dropna()
+            if not col_data.empty:
+                counts, bins = np.histogram(col_data, bins=15)
+                for i in range(len(counts)):
+                    hist_data.append({"bin": f"{bins[i]:.1f}-{bins[i+1]:.1f}", "count": int(counts[i])})
+                    
+        corr_matrix = df[numeric_cols].corr().fillna(0).round(2).to_dict()
+        return {"histogram": hist_data, "correlation": corr_matrix, "numeric_cols": numeric_cols}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
