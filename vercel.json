@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "python build_stlite.py",
   "outputDirectory": ".",
-  "framework": null
+  "framework": null,
+  "buildCommand": null
 }
