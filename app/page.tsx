@@ -317,7 +317,7 @@ export default function Home() {
                     <div>
                     <label className="block text-sm font-bold text-[#18332F] mb-2">Detection Methodology</label>
                     <select value={outlierMethod} onChange={e => setOutlierMethod(e.target.value)} className="w-full p-3 border border-[#DFDBD0] rounded-lg bg-gray-50 focus:outline-none">
-                        <option value="Z-score">Z-score (Threshold > 3 std)</option>
+                        <option value="Z-score">Z-score (Threshold &gt; 3 std)</option>
                         <option value="IQR">IQR (1.5x Interquartile Range)</option>
                     </select>
                     </div>
