@@ -1,0 +1,106 @@
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.responses import JSONResponse
+import pandas as pd
+import numpy as np
+import io
+import json
+from scipy import stats
+import base64
+
+app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+def get_stats(df: pd.DataFrame):
+    total_cells = df.size
+    missing_cells = int(df.isna().sum().sum())
+    missing_pct = (missing_cells / total_cells * 100.0) if total_cells > 0 else 0.0
+    total_rows = len(df)
+    duplicate_rows = int(df.duplicated().sum())
+    duplicate_pct = (duplicate_rows / total_rows * 100.0) if total_rows > 0 else 0.0
+    raw_score = 100.0 - (0.5 * missing_pct) - (0.5 * duplicate_pct)
+    score = round(float(np.clip(raw_score, 0.0, 100.0)), 1)
+    
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = [c for c in df.columns if c not in numeric_cols]
+    
+    preview = df.head(20).fillna("").to_dict(orient="records")
+    
+    return {
+        "score": score,
+        "missing_pct": round(missing_pct, 2),
+        "duplicate_pct": round(duplicate_pct, 2),
+        "total_cells": total_cells,
+        "missing_cells": missing_cells,
+        "duplicate_rows": duplicate_rows,
+        "total_rows": total_rows,
+        "columns": df.columns.tolist(),
+        "numeric_cols": numeric_cols,
+        "categorical_cols": categorical_cols,
+        "preview": preview
+    }
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(io.BytesIO(contents))
+        elif file.filename.endswith((".xls", ".xlsx")):
+            df = pd.read_excel(io.BytesIO(contents))
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format")
+        
+        # Convert back to CSV string for state management
+        csv_str = df.to_csv(index=False)
+        stats_data = get_stats(df)
+        
+        return {"stats": stats_data, "csv_data": csv_str, "filename": file.filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/clean")
+async def clean_data(csv_data: str = Form(...), strategy: str = Form(...), remove_duplicates: bool = Form(...)):
+    try:
+        df = pd.read_csv(io.StringIO(csv_data))
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        non_numeric_cols = [c for c in df.columns if c not in numeric_cols]
+        
+        if strategy == "Drop rows":
+            df = df.dropna()
+        elif strategy == "Mean":
+            for col in numeric_cols:
+                mean_val = df[col].mean()
+                if pd.notna(mean_val):
+                    df[col] = df[col].fillna(mean_val)
+            for col in non_numeric_cols:
+                modes = df[col].mode()
+                if not modes.empty:
+                    df[col] = df[col].fillna(modes.iloc[0])
+        elif strategy == "Median":
+            for col in numeric_cols:
+                median_val = df[col].median()
+                if pd.notna(median_val):
+                    df[col] = df[col].fillna(median_val)
+            for col in non_numeric_cols:
+                modes = df[col].mode()
+                if not modes.empty:
+                    df[col] = df[col].fillna(modes.iloc[0])
+        elif strategy == "Mode":
+            for col in df.columns:
+                modes = df[col].mode()
+                if not modes.empty:
+                    df[col] = df[col].fillna(modes.iloc[0])
+                    
+        if remove_duplicates:
+            df = df.drop_duplicates()
+            
+        df = df.reset_index(drop=True)
+        stats_data = get_stats(df)
+        csv_str = df.to_csv(index=False)
+        
+        return {"stats": stats_data, "csv_data": csv_str}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
