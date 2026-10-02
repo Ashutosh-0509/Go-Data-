@@ -15,6 +15,9 @@ from sklearn.metrics import accuracy_score, r2_score
 import re
 import os
 
+# Maximum upload size: 10 MB (protects Render free tier 512 MB memory)
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
 app = FastAPI(
     title="Smart Data Analyst & AutoML API",
     description="Backend service for data profiling, cleaning, outlier calibration, visual EDA, and AutoML benchmarking. Processed in memory, not stored persistently.",
@@ -122,7 +125,17 @@ async def upload_file(file: UploadFile = File(...)):
     try:
         filename_lower = (file.filename or "dataset.csv").lower()
         contents = await file.read()
-        
+
+        # Enforce max upload size
+        if len(contents) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large ({len(contents) / (1024*1024):.1f} MB). Maximum allowed size is {MAX_UPLOAD_BYTES // (1024*1024)} MB."
+            )
+
+        if len(contents) == 0:
+            raise HTTPException(status_code=400, detail="Uploaded file is empty. Please select a valid dataset.")
+
         if filename_lower.endswith(".csv") or filename_lower.endswith(".txt"):
             try:
                 df = pd.read_csv(io.BytesIO(contents), encoding="utf-8")
@@ -139,12 +152,17 @@ async def upload_file(file: UploadFile = File(...)):
             except Exception:
                 raise HTTPException(status_code=400, detail="Unsupported file format. Please upload a .csv, .xlsx, or .xls file.")
 
+        if df.empty or len(df.columns) == 0:
+            raise HTTPException(status_code=400, detail="The file was parsed but contains no data. Please check the file contents.")
+
         # Clean column names
         df.columns = [str(c).strip() for c in df.columns]
         csv_str = df.to_csv(index=False)
         return {"stats": get_stats(df), "csv_data": csv_str, "filename": file.filename or "dataset.csv"}
     except HTTPException:
         raise
+    except pd.errors.ParserError:
+        raise HTTPException(status_code=400, detail="Invalid CSV format. The file could not be parsed as a valid table.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse dataset: {type(e).__name__}")
 
@@ -247,8 +265,8 @@ async def train_models(
         # Drop rows where target is missing
         df = df.dropna(subset=[target]).reset_index(drop=True)
         n_samples = len(df)
-        if n_samples < 5:
-            raise HTTPException(status_code=400, detail="Dataset requires at least 5 non-null rows for model evaluation.")
+        if n_samples < 10:
+            raise HTTPException(status_code=400, detail=f"Dataset has only {n_samples} non-null rows. At least 10 rows are required for reliable cross-validation.")
         
         y = df[target]
         X = df.drop(columns=[target])

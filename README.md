@@ -82,3 +82,34 @@ npm run dev
    - Automatic classification and regression benchmarking using Decision Trees, Random Forests, and Linear/Logistic models.
 6. **Live Data Chat Agent**:
    - Deterministic, code-grounded pandas queries directly evaluated against the live dataset.
+
+---
+
+## ☁️ Production Deployment
+
+### Backend on Render (Python Web Service)
+
+1. In the [Render Dashboard](https://dashboard.render.com), create a **New Web Service**.
+2. Connect the GitHub repo `prajwal-sangle/Auto-AI-platform-`.
+3. Configure:
+   - **Runtime**: Python
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. Add environment variable:
+   - `PYTHON_VERSION` = `3.11.9`
+5. Deploy.
+
+> **⚠️ Cold-start note:** Render's free tier spins down after 15 minutes of inactivity. The first request after a cold start takes ~30–60 seconds while the container boots. The frontend automatically shows a "Waking up server" banner during this period.
+
+### Frontend on Vercel (Next.js)
+
+1. Import the repo on [Vercel](https://vercel.com).
+2. Set **Root Directory** to `frontend`.
+3. Add environment variable:
+   - `NEXT_PUBLIC_API_URL` = `https://auto-ai-platform.onrender.com` *(your Render service URL)*
+4. Deploy. Vercel auto-deploys on every push to `main`.
+
+### Upload Limits
+
+The backend enforces a **10 MB** maximum file upload size. The frontend shows an error toast immediately if a file exceeds this limit, before it even reaches the server.

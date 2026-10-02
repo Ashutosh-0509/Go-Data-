@@ -591,6 +591,14 @@ export default function Home() {
       setShowAuthModal(true);
       return;
     }
+
+    // Client-side file size guard (10 MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      showToast(`File too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 10 MB.`, "error");
+      return;
+    }
+
     setLoading(true);
     setFileName(file.name);
     setCleaningAudit(null);
@@ -610,6 +618,16 @@ export default function Home() {
         showToast("Dataset successfully parsed and analyzed.");
         setLoading(false);
         return;
+      }
+      // Non-ok response: extract error detail from JSON
+      try {
+        const errBody = await res.json();
+        const detail = errBody?.detail || `Server error (${res.status})`;
+        showToast(detail, "error");
+        setLoading(false);
+        return;
+      } catch {
+        // Response wasn't JSON
       }
     } catch (err) {
       console.warn("Backend API upload unreachable, using client-side parser...", err);
@@ -850,6 +868,16 @@ export default function Home() {
         showToast(`Models evaluated for ${data.task_type}.`);
         setLoading(false);
         return;
+      }
+      // Non-ok response: extract and show backend error detail
+      try {
+        const errBody = await res.json();
+        const detail = errBody?.detail || `Server error (${res.status})`;
+        showToast(detail, "error");
+        setLoading(false);
+        return;
+      } catch {
+        // Response wasn't JSON, fall through to client-side
       }
     } catch (err: any) {
       console.warn("Backend ML unavailable, running client-side baseline evaluator...", err);
