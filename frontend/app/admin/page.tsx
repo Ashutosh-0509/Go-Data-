@@ -22,6 +22,7 @@ import {
   Layers,
   FileSpreadsheet
 } from "lucide-react";
+import { apiFetch, API_BASE_URL } from "../config/api";
 
 export default function AdminPage() {
   const [apiHealth, setApiHealth] = useState<{ status: string; latency: number } | null>(null);
@@ -32,7 +33,7 @@ export default function AdminPage() {
     setIsCheckingHealth(true);
     const start = performance.now();
     try {
-      const res = await fetch("/api/health");
+      const res = await apiFetch("/health", { timeoutMs: 65000, retries: 1 });
       const end = performance.now();
       if (res.ok) {
         setApiHealth({ status: "healthy", latency: Math.round(end - start) });
@@ -175,8 +176,8 @@ export default function AdminPage() {
               </span>
             </div>
             <p className="text-[11px] text-[#5A6B65] mt-2 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              FastAPI port 8000 connected
+              <span className={`w-2 h-2 rounded-full ${apiHealth?.status === "healthy" ? "bg-emerald-500 animate-pulse" : apiHealth?.status === "degraded" ? "bg-amber-500" : "bg-red-500"}`}></span>
+              {apiHealth?.status === "healthy" ? `FastAPI connected (${API_BASE_URL.replace("https://", "").replace("http://", "")})` : `API ${apiHealth?.status || "offline"}`}
             </p>
           </div>
 

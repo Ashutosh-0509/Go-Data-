@@ -15,6 +15,7 @@ import {
   Cpu,
   ShieldCheck
 } from "lucide-react";
+import { apiFetch } from "../config/api";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -90,9 +91,10 @@ export default function ChatbotModal({
         formData.append("csv_data", csvData);
         formData.append("message", text);
 
-        const res = await fetch("/api/chat", {
+        const res = await apiFetch("/api/chat", {
           method: "POST",
           body: formData,
+          timeoutMs: 65000,
         });
 
         if (res.ok) {

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { BarChart3, Shield, ExternalLink } from "lucide-react";
 
+import { getApiDocsUrl } from "../config/api";
+
 export default function Footer() {
+  const apiDocsUrl = getApiDocsUrl();
   return (
     <footer className="w-full bg-[#18332F] text-[#EBE7DC] border-t border-[#2D6A59]/40 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -40,7 +43,7 @@ export default function Footer() {
               <li><Link href="/login" className="hover:text-emerald-300 transition-colors">Sign In</Link></li>
               <li>
                 <a
-                  href="http://127.0.0.1:8000/docs"
+                  href={apiDocsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 hover:text-emerald-300 transition-colors"

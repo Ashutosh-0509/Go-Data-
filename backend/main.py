@@ -15,17 +15,24 @@ import re
 import os
 
 app = FastAPI(
-    title="Data Analyst & ML API",
-    description="Backend service providing data profiling, cleaning, outlier handling, EDA, and ML models.",
-    version="1.0.0",
+    title="Smart Data Analyst & AutoML API",
+    description="High-performance in-memory backend service for data profiling, cleaning, outlier calibration, visual EDA, and AutoML benchmarking.",
+    version="2.5.0",
     docs_url="/docs",
     openapi_url="/openapi.json"
 )
 
-# Enable CORS for Next.js frontend (allowing all origins for seamless development)
+# CORS Configuration allowing Vercel production, preview deployments, and local dev
+allowed_origins = [
+    "https://frontend-delta-one-85s7raegfj.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https://.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,7 +54,7 @@ def get_stats(df: pd.DataFrame):
     # First 50 records for rich table view
     preview = df.head(50).fillna("").to_dict(orient="records")
     
-    # Privacy detection
+    # Privacy detection (in-memory regex detection)
     privacy_flags = []
     email_regex = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
     phone_regex = re.compile(r"^\+?1?\d{9,15}$")
@@ -98,9 +105,11 @@ def get_stats(df: pd.DataFrame):
 @app.get("/")
 def root():
     return {
-        "message": "Data Analyst API is running",
+        "status": "ok",
+        "service": "Smart Data Analyst API",
         "docs": "/docs",
-        "status": "healthy"
+        "version": "2.5.0",
+        "storage": "in-memory only"
     }
 
 @app.get("/health")
@@ -277,6 +286,61 @@ async def train_models(csv_data: str = Form(...), target: str = Form(...)):
         return {"task_type": task_type, "leaderboard": leaderboard}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model training error: {str(e)}")
+
+@app.post("/api/chat")
+async def grounded_chat(csv_data: str = Form(...), message: str = Form(...)):
+    """
+    Grounded conversational data intelligence that analyzes the active dataset in memory.
+    """
+    try:
+        df = pd.read_csv(io.StringIO(csv_data))
+        msg_lower = message.lower()
+        stats_info = get_stats(df)
+        
+        if "average" in msg_lower or "mean" in msg_lower:
+            num_cols = stats_info["numeric_cols"]
+            if num_cols:
+                means = [f"• **{col}**: `{df[col].mean():.2f}`" for col in num_cols[:8]]
+                reply = f"**Column Averages (Means):**\n\n" + "\n".join(means)
+            else:
+                reply = "There are no numerical columns in this dataset to compute averages."
+        elif "missing" in msg_lower or "null" in msg_lower:
+            missing_total = stats_info["missing_cells"]
+            if missing_total == 0:
+                reply = "✅ **Zero missing values!** Your dataset has complete data coverage across all rows and columns."
+            else:
+                col_missing = df.isna().sum()
+                cols_with_nulls = [f"• **{col}**: {cnt} missing values ({cnt/len(df)*100:.1f}%)" for col, cnt in col_missing.items() if cnt > 0]
+                reply = f"⚠️ Found **{missing_total} total missing cells** ({stats_info['missing_pct']}%):\n\n" + "\n".join(cols_with_nulls) + "\n\n💡 *Tip: Use the Data Cleaning tab to impute with Mean or Median.*"
+        elif "correlation" in msg_lower:
+            num_cols = stats_info["numeric_cols"]
+            if len(num_cols) >= 2:
+                corr = df[num_cols].corr()
+                unstacked = corr.unstack()
+                pairs = []
+                for (col1, col2), val in unstacked.items():
+                    if col1 != col2 and not np.isnan(val):
+                        pairs.append((col1, col2, val))
+                pairs.sort(key=lambda x: abs(x[2]), reverse=True)
+                top_pairs = pairs[::2][:5]
+                reply = "**Strongest Feature Correlations:**\n\n" + "\n".join([f"• **{p[0]}** ↔ **{p[1]}**: `r = {p[2]:.2f}`" for p in top_pairs])
+            else:
+                reply = "Need at least 2 numerical columns to calculate correlation matrix."
+        elif "health" in msg_lower or "score" in msg_lower:
+            reply = f"**Dataset Health Score: {stats_info['score']}/100**\n\n• Rows: {stats_info['total_rows']:,}\n• Missing: {stats_info['missing_pct']}%\n• Duplicates: {stats_info['duplicate_pct']}%\n• PII Status: {'Clean' if not stats_info['privacy_flags'] else 'PII Detected'}"
+        else:
+            reply = (
+                f"**Dataset Summary:**\n\n"
+                f"• **Dimensions**: `{stats_info['total_rows']:,}` rows × `{len(stats_info['columns'])}` columns\n"
+                f"• **Numerical Columns**: {', '.join(stats_info['numeric_cols'][:6]) if stats_info['numeric_cols'] else 'None'}\n"
+                f"• **Categorical Columns**: {', '.join(stats_info['categorical_cols'][:6]) if stats_info['categorical_cols'] else 'None'}\n"
+                f"• **Health Score**: `{stats_info['score']}/100`\n\n"
+                f"Ask me about column distributions, correlations, outliers, or modeling recommendations!"
+            )
+            
+        return {"reply": reply}
+    except Exception as e:
+        return {"reply": f"Analysis calculation error: {str(e)}"}
 
 if __name__ == "__main__":
     import uvicorn

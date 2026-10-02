@@ -32,6 +32,7 @@ import {
   X,
   Download
 } from "lucide-react";
+import { apiFetch, pingBackendHealth, subscribeColdStart } from "./config/api";
 
 const inter = Inter({ subsets: ["latin"] });
 const merriweather = Merriweather({ weight: ["300", "400", "700", "900"], subsets: ["latin"] });
@@ -515,8 +516,19 @@ export default function Home() {
 
   const [currentUser, setCurrentUser] = useState<{ name: string; email: string; role: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isWakingServer, setIsWakingServer] = useState(false);
+  const [wakingMsg, setWakingMsg] = useState("Waking up backend server on Render...");
 
   useEffect(() => {
+    // Pre-warm backend container non-blocking
+    pingBackendHealth();
+
+    // Subscribe to cold-start detection
+    const unsubscribe = subscribeColdStart((waking, msg) => {
+      setIsWakingServer(waking);
+      if (msg) setWakingMsg(msg);
+    });
+
     const checkUser = () => {
       const stored = localStorage.getItem("sda_user");
       if (stored) {
@@ -531,7 +543,10 @@ export default function Home() {
     };
     checkUser();
     window.addEventListener("storage", checkUser);
-    return () => window.removeEventListener("storage", checkUser);
+    return () => {
+      window.removeEventListener("storage", checkUser);
+      unsubscribe();
+    };
   }, []);
 
   const handleQuickDemoLogin = (role: "Analyst" | "Admin") => {
@@ -584,7 +599,7 @@ export default function Home() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const res = await apiFetch("/api/upload", { method: "POST", body: formData, timeoutMs: 75000 });
       if (res.ok) {
         const data = await res.json();
         setCsvData(data.csv_data);
@@ -675,7 +690,7 @@ export default function Home() {
       formData.append("strategy", cleaningStrategy);
       formData.append("remove_duplicates", removeDuplicates.toString());
 
-      const res = await fetch("/api/clean", { method: "POST", body: formData });
+      const res = await apiFetch("/api/clean", { method: "POST", body: formData, timeoutMs: 70000 });
       if (res.ok) {
         const data = await res.json();
         setCsvData(data.csv_data);
@@ -738,7 +753,7 @@ export default function Home() {
       formData.append("method", outlierMethod);
       formData.append("action", outlierAction);
 
-      const res = await fetch("/api/outliers", { method: "POST", body: formData });
+      const res = await apiFetch("/api/outliers", { method: "POST", body: formData, timeoutMs: 70000 });
       if (res.ok) {
         const data = await res.json();
         setCsvData(data.csv_data);
@@ -789,7 +804,7 @@ export default function Home() {
       formData.append("csv_data", csvData);
       formData.append("column", col);
 
-      const res = await fetch("/api/eda", { method: "POST", body: formData });
+      const res = await apiFetch("/api/eda", { method: "POST", body: formData, timeoutMs: 70000 });
       if (res.ok) {
         const data = await res.json();
         setEdaData(data);
@@ -823,7 +838,7 @@ export default function Home() {
       formData.append("csv_data", csvData);
       formData.append("target", mlTarget);
 
-      const res = await fetch("/api/train", { method: "POST", body: formData });
+      const res = await apiFetch("/api/train", { method: "POST", body: formData, timeoutMs: 70000 });
       if (res.ok) {
         const data = await res.json();
         setLeaderboard(data.leaderboard);
@@ -883,6 +898,15 @@ export default function Home() {
         currentUser={currentUser}
         onRequireAuth={() => setShowAuthModal(true)}
       />
+
+      {/* Render Free-Tier Cold Start Banner */}
+      {isWakingServer && (
+        <div className="w-full bg-gradient-to-r from-amber-500/15 via-[#2D6A59]/15 to-emerald-500/15 border-b border-amber-300/40 px-4 py-2 text-center text-xs font-semibold text-[#18332F] flex items-center justify-center gap-2 animate-pulse">
+          <Sparkles className="w-4 h-4 text-amber-600 animate-spin" />
+          <span>⚡ {wakingMsg}</span>
+          <span className="text-[11px] text-[#5A6B65] hidden sm:inline">(Free-tier cloud backend spins down on idle; warming up container)</span>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. PROFESSIONAL LANDING WORKSPACE (WHEN NO DATASET LOADED) */}
