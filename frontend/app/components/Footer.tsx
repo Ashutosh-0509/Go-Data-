@@ -60,10 +60,10 @@ export default function Footer() {
             <div className="p-3 rounded-xl bg-[#2D6A59]/20 border border-[#2D6A59]/40 text-xs text-[#EBE7DC]/80 space-y-1">
               <div className="flex items-center gap-1.5 font-bold text-emerald-300">
                 <Shield className="w-3.5 h-3.5" />
-                In-Memory Data Hygiene
+                In-Memory Processing
               </div>
               <p className="text-[11px] leading-relaxed text-[#EBE7DC]/70">
-                Datasets are processed securely in volatile memory. No user spreadsheets are retained on cloud servers.
+                Datasets are processed in memory, not stored persistently. No user spreadsheets are retained on cloud servers.
               </p>
             </div>
           </div>

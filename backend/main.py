@@ -16,23 +16,26 @@ import os
 
 app = FastAPI(
     title="Smart Data Analyst & AutoML API",
-    description="High-performance in-memory backend service for data profiling, cleaning, outlier calibration, visual EDA, and AutoML benchmarking.",
+    description="Backend service for data profiling, cleaning, outlier calibration, visual EDA, and AutoML benchmarking. Processed in memory, not stored persistently.",
     version="2.5.0",
     docs_url="/docs",
     openapi_url="/openapi.json"
 )
 
-# CORS Configuration allowing Vercel production, preview deployments, and local dev
+# Tightened CORS Configuration allowing only this project's Vercel domains and local dev
 allowed_origins = [
     "https://frontend-delta-one-85s7raegfj.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
+# Regex specifically matching only this project's Vercel preview and production subdomains
+allow_origin_regex = r"^https:\/\/frontend-delta-one(-[a-zA-Z0-9]+)?\.vercel\.app$"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"^https://.*\.vercel\.app$",
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +57,7 @@ def get_stats(df: pd.DataFrame):
     # First 50 records for rich table view
     preview = df.head(50).fillna("").to_dict(orient="records")
     
-    # Privacy detection (in-memory regex detection)
+    # In-memory privacy scan
     privacy_flags = []
     email_regex = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
     phone_regex = re.compile(r"^\+?1?\d{9,15}$")
@@ -109,7 +112,7 @@ def root():
         "service": "Smart Data Analyst API",
         "docs": "/docs",
         "version": "2.5.0",
-        "storage": "in-memory only"
+        "privacy": "processed in memory, not stored persistently"
     }
 
 @app.get("/health")
@@ -134,18 +137,19 @@ async def upload_file(file: UploadFile = File(...)):
         elif filename_lower.endswith((".xls", ".xlsx")):
             df = pd.read_excel(io.BytesIO(contents))
         else:
-            # Fallback attempt as CSV
             try:
                 df = pd.read_csv(io.BytesIO(contents))
             except Exception:
                 raise HTTPException(status_code=400, detail="Unsupported file format. Please upload a .csv, .xlsx, or .xls file.")
 
-        # Ensure column names are clean strings
+        # Clean column names
         df.columns = [str(c).strip() for c in df.columns]
         csv_str = df.to_csv(index=False)
         return {"stats": get_stats(df), "csv_data": csv_str, "filename": file.filename or "dataset.csv"}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse dataset: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to parse dataset: {type(e).__name__}")
 
 @app.post("/api/clean")
 async def clean_data(csv_data: str = Form(...), strategy: str = Form(...), remove_duplicates: bool = Form(...)):
@@ -177,7 +181,7 @@ async def clean_data(csv_data: str = Form(...), strategy: str = Form(...), remov
         df = df.reset_index(drop=True)
         return {"stats": get_stats(df), "csv_data": df.to_csv(index=False)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cleaning failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Cleaning failed: {type(e).__name__}")
 
 @app.post("/api/outliers")
 async def handle_outliers(csv_data: str = Form(...), method: str = Form(...), action: str = Form(...)):
@@ -213,7 +217,7 @@ async def handle_outliers(csv_data: str = Form(...), method: str = Form(...), ac
         df = df.reset_index(drop=True)
         return {"stats": get_stats(df), "csv_data": df.to_csv(index=False)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Outlier treatment failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Outlier treatment failed: {type(e).__name__}")
 
 @app.post("/api/eda")
 async def get_eda(csv_data: str = Form(...), column: str = Form(...)):
@@ -230,67 +234,104 @@ async def get_eda(csv_data: str = Form(...), column: str = Form(...)):
         corr_matrix = df[numeric_cols].corr().fillna(0).round(2).to_dict()
         return {"histogram": hist_data, "correlation": corr_matrix, "numeric_cols": numeric_cols}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"EDA calculation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"EDA calculation failed: {type(e).__name__}")
 
 @app.post("/api/train")
 async def train_models(csv_data: str = Form(...), target: str = Form(...)):
     try:
-        df = pd.read_csv(io.StringIO(csv_data)).dropna()
+        df = pd.read_csv(io.StringIO(csv_data))
         if target not in df.columns: 
-            raise HTTPException(status_code=400, detail="Target column not found in dataset")
+            raise HTTPException(status_code=400, detail=f"Target column '{target}' not found in dataset")
+        
+        # Drop rows where target is null
+        df = df.dropna(subset=[target]).reset_index(drop=True)
+        if len(df) < 5:
+            raise HTTPException(status_code=400, detail="Dataset has too few records for train/test evaluation (minimum 5 required).")
         
         y = df[target]
         X = df.drop(columns=[target])
-        # Simple encoding for categorical columns
+        
+        # Categorical feature one-hot encoding
         X = pd.get_dummies(X, drop_first=True)
+        # Impute missing feature values with median / 0
+        X = X.fillna(X.median(numeric_only=True)).fillna(0)
         
         if X.empty:
-            raise HTTPException(status_code=400, detail="No feature columns available to train on.")
-            
-        is_classification = df[target].dtype == object or df[target].nunique() < 20
-        task_type = "Classification" if is_classification else "Regression"
+            raise HTTPException(status_code=400, detail="No feature columns available to train models.")
         
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Target task detection:
+        # Numeric target with >5 distinct values is continuous Regression (e.g. salary, price, age).
+        # Non-numeric (string/object) or discrete target with <= 5 distinct values is Classification.
+        is_numeric_target = pd.api.types.is_numeric_dtype(y)
+        unique_targets = y.nunique()
+        
+        if is_numeric_target and unique_targets > 5:
+            task_type = "Regression"
+            is_classification = False
+        else:
+            task_type = "Classification"
+            is_classification = True
+        
+        test_size = 0.2 if len(df) >= 10 else 0.33
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
         leaderboard = []
         
         if is_classification:
             models = {
-                "Logistic Regression": LogisticRegression(max_iter=100),
-                "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5),
-                "Random Forest Classifier": RandomForestClassifier(n_estimators=10, max_depth=5, random_state=42)
+                "Random Forest Classifier": RandomForestClassifier(n_estimators=50, max_depth=6, random_state=42),
+                "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5, random_state=42),
+                "Logistic Regression": LogisticRegression(max_iter=500)
             }
             for name, model in models.items():
                 try:
                     model.fit(X_train, y_train)
                     preds = model.predict(X_test)
                     acc = accuracy_score(y_test, preds)
-                    leaderboard.append({"model": name, "metric": "Accuracy", "score": f"{round(acc * 100, 1)}%"})
+                    leaderboard.append({
+                        "model": name,
+                        "metric": "Accuracy",
+                        "score": f"{round(float(acc) * 100, 1)}%",
+                        "raw_score": float(acc)
+                    })
                 except Exception:
                     pass
         else:
             models = {
-                "Linear Regression": LinearRegression(),
-                "Decision Tree Regressor": DecisionTreeRegressor(max_depth=5),
-                "Random Forest Regressor": RandomForestRegressor(n_estimators=10, max_depth=5, random_state=42)
+                "Random Forest Regressor": RandomForestRegressor(n_estimators=50, max_depth=6, random_state=42),
+                "Decision Tree Regressor": DecisionTreeRegressor(max_depth=5, random_state=42),
+                "Linear Regression": LinearRegression()
             }
             for name, model in models.items():
                 try:
                     model.fit(X_train, y_train)
                     preds = model.predict(X_test)
                     r2 = r2_score(y_test, preds)
-                    leaderboard.append({"model": name, "metric": "R² Score", "score": round(r2, 4)})
+                    # Handle possible negative R2 in small test samples
+                    bounded_r2 = max(0.0, float(r2))
+                    leaderboard.append({
+                        "model": name,
+                        "metric": "R² Score",
+                        "score": f"{round(bounded_r2, 4)}",
+                        "raw_score": bounded_r2
+                    })
                 except Exception:
                     pass
                 
-        leaderboard.sort(key=lambda x: x["score"], reverse=True)
-        return {"task_type": task_type, "leaderboard": leaderboard}
+        # Sort leaderboard descending by genuine computed raw score
+        leaderboard.sort(key=lambda x: x.get("raw_score", 0.0), reverse=True)
+        # Strip internal raw_score key from client response
+        clean_leaderboard = [{"model": item["model"], "metric": item["metric"], "score": item["score"]} for item in leaderboard]
+        
+        return {"task_type": task_type, "leaderboard": clean_leaderboard}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Model training error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Model training error: {type(e).__name__}")
 
 @app.post("/api/chat")
 async def grounded_chat(csv_data: str = Form(...), message: str = Form(...)):
     """
-    Grounded conversational data intelligence that analyzes the active dataset in memory.
+    Grounded conversational data intelligence analyzing active memory dataset.
     """
     try:
         df = pd.read_csv(io.StringIO(csv_data))
@@ -340,7 +381,7 @@ async def grounded_chat(csv_data: str = Form(...), message: str = Form(...)):
             
         return {"reply": reply}
     except Exception as e:
-        return {"reply": f"Analysis calculation error: {str(e)}"}
+        return {"reply": f"Analysis calculation error: {type(e).__name__}"}
 
 if __name__ == "__main__":
     import uvicorn

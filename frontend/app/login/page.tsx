@@ -285,7 +285,7 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 text-center text-xs text-[#5A6B65]">
-              By logging in, you agree to our in-memory privacy policy and safe analytical computation standards.
+              By logging in, you agree that datasets are processed in memory and not stored persistently.
             </div>
 
           </div>

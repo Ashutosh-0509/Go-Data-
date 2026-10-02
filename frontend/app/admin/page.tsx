@@ -215,20 +215,20 @@ export default function AdminPage() {
             </p>
           </div>
 
-          {/* Data Hygiene / Cleaning Rate */}
+          {/* Privacy & In-Memory Processing */}
           <div className="glass-card rounded-2xl p-5 border border-[#DFDBD0]/80">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-[#5A6B65] uppercase tracking-wider">PII Shield Rate</span>
+              <span className="text-xs font-bold text-[#5A6B65] uppercase tracking-wider">PII Shield</span>
               <ShieldCheck className="w-4 h-4 text-[#2D6A59]" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-[#18332F]">100%</span>
+              <span className="text-2xl font-black text-[#18332F]">Active</span>
               <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                Zero Leaks
+                In-Memory
               </span>
             </div>
             <p className="text-[11px] text-[#5A6B65] mt-2">
-              Protected in volatile RAM buffers
+              Processed in memory, not stored persistently
             </p>
           </div>
 
@@ -342,10 +342,10 @@ export default function AdminPage() {
             <div className="p-3.5 rounded-2xl bg-[#18332F] text-white space-y-1">
               <div className="text-xs font-bold flex items-center gap-1.5 text-emerald-300">
                 <Sparkles className="w-3.5 h-3.5" />
-                In-Memory Data Hygiene
+                In-Memory Computation
               </div>
               <p className="text-[11px] text-[#EBE7DC]/80 leading-relaxed">
-                No user CSV or Excel files are permanently retained on disk. All pipelines execute in RAM buffers.
+                Datasets are processed in memory, not stored persistently. Computations execute in volatile RAM buffers.
               </p>
             </div>
           </div>
