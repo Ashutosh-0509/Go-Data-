@@ -493,6 +493,7 @@ export default function Home() {
 
   // ML Form
   const [mlTarget, setMlTarget] = useState("");
+  const [mlTaskTypeOverride, setMlTaskTypeOverride] = useState("Auto");
   const [leaderboard, setLeaderboard] = useState<any>(null);
   const [taskType, setTaskType] = useState("");
 
@@ -837,6 +838,9 @@ export default function Home() {
       const formData = new FormData();
       formData.append("csv_data", csvData);
       formData.append("target", mlTarget);
+      if (mlTaskTypeOverride && mlTaskTypeOverride !== "Auto") {
+        formData.append("task_type", mlTaskTypeOverride);
+      }
 
       const res = await apiFetch("/api/train", { method: "POST", body: formData, timeoutMs: 70000 });
       if (res.ok) {
@@ -1845,8 +1849,8 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 p-4 rounded-xl bg-[#EBE7DC]/60 border border-[#DFDBD0]">
-                <div className="flex-1 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-[#EBE7DC]/60 border border-[#DFDBD0]">
+                <div className="w-full">
                   <label className="block text-xs font-bold text-[#18332F] mb-1">Target Variable to Predict</label>
                   <select
                     value={mlTarget}
@@ -1859,11 +1863,24 @@ export default function Home() {
                   </select>
                 </div>
 
+                <div className="w-full">
+                  <label className="block text-xs font-bold text-[#18332F] mb-1">Task Type</label>
+                  <select
+                    value={mlTaskTypeOverride}
+                    onChange={(e) => setMlTaskTypeOverride(e.target.value)}
+                    className="w-full p-2.5 rounded-lg border border-[#DFDBD0] text-xs sm:text-sm outline-none bg-white font-semibold"
+                  >
+                    <option value="Auto">Auto-Detect (Recommended)</option>
+                    <option value="Regression">Regression (Continuous Values / R²)</option>
+                    <option value="Classification">Classification (Discrete Classes / Accuracy)</option>
+                  </select>
+                </div>
+
                 <button
                   type="button"
                   onClick={handleTrainML}
                   disabled={loading}
-                  className="w-full sm:w-auto sm:self-end px-6 py-2.5 rounded-xl bg-[#18332F] hover:bg-[#2D6A59] text-white font-bold text-xs sm:text-sm shadow-sm transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:self-end px-6 py-2.5 rounded-xl bg-[#18332F] hover:bg-[#2D6A59] text-white font-bold text-xs sm:text-sm shadow-sm transition-colors flex items-center justify-center gap-2"
                 >
                   <Cpu className="w-4 h-4 text-emerald-300" />
                   {loading ? "Evaluating Models..." : "Train & Evaluate Models"}

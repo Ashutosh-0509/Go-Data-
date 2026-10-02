@@ -1,16 +1,17 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 import pandas as pd
 import numpy as np
 import io
 import json
 from scipy import stats
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+from sklearn.metrics import accuracy_score, r2_score
 import re
 import os
 
@@ -22,21 +23,17 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Tightened CORS Configuration allowing only this project's Vercel domains and local dev
+# Explicit allowed origins list (Vercel production and local dev)
 allowed_origins = [
     "https://frontend-delta-one-85s7raegfj.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# Regex specifically matching only this project's Vercel preview and production subdomains
-allow_origin_regex = r"^https:\/\/frontend-delta-one(-[a-zA-Z0-9]+)?\.vercel\.app$"
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=allow_origin_regex,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -237,92 +234,126 @@ async def get_eda(csv_data: str = Form(...), column: str = Form(...)):
         raise HTTPException(status_code=500, detail=f"EDA calculation failed: {type(e).__name__}")
 
 @app.post("/api/train")
-async def train_models(csv_data: str = Form(...), target: str = Form(...)):
+async def train_models(
+    csv_data: str = Form(...),
+    target: str = Form(...),
+    task_type: Optional[str] = Form(None)
+):
     try:
         df = pd.read_csv(io.StringIO(csv_data))
         if target not in df.columns: 
             raise HTTPException(status_code=400, detail=f"Target column '{target}' not found in dataset")
         
-        # Drop rows where target is null
+        # Drop rows where target is missing
         df = df.dropna(subset=[target]).reset_index(drop=True)
-        if len(df) < 5:
-            raise HTTPException(status_code=400, detail="Dataset has too few records for train/test evaluation (minimum 5 required).")
+        n_samples = len(df)
+        if n_samples < 5:
+            raise HTTPException(status_code=400, detail="Dataset requires at least 5 non-null rows for model evaluation.")
         
         y = df[target]
         X = df.drop(columns=[target])
         
-        # Categorical feature one-hot encoding
+        # 1. Preprocessing: Drop ID-like and high-cardinality text columns before one-hot encoding
+        cols_to_drop = []
+        for col in X.columns:
+            col_lower = str(col).lower().strip()
+            # ID patterns
+            if re.search(r"(^id$|_id$|^name$|^first_name$|^last_name$|^email$|^phone$|^ssn$|^uuid$)", col_lower):
+                cols_to_drop.append(col)
+            # High cardinality ratio > 50% for non-numeric/text columns
+            elif not pd.api.types.is_numeric_dtype(X[col]) and (X[col].nunique() / n_samples > 0.5):
+                cols_to_drop.append(col)
+                
+        if cols_to_drop:
+            X = X.drop(columns=cols_to_drop)
+            
+        # One-hot encode remaining categorical features
         X = pd.get_dummies(X, drop_first=True)
-        # Impute missing feature values with median / 0
+        # Impute missing feature values with column median, fallback to 0
         X = X.fillna(X.median(numeric_only=True)).fillna(0)
         
-        if X.empty:
-            raise HTTPException(status_code=400, detail="No feature columns available to train models.")
-        
-        # Target task detection:
-        # Numeric target with >5 distinct values is continuous Regression (e.g. salary, price, age).
-        # Non-numeric (string/object) or discrete target with <= 5 distinct values is Classification.
-        is_numeric_target = pd.api.types.is_numeric_dtype(y)
-        unique_targets = y.nunique()
-        
-        if is_numeric_target and unique_targets > 5:
-            task_type = "Regression"
-            is_classification = False
+        if X.empty or X.shape[1] == 0:
+            raise HTTPException(status_code=400, detail="No valid feature columns remain after removing ID/high-cardinality columns.")
+            
+        # 2. Determine Task Type (Auto-detect or user specified)
+        if task_type and task_type in ["Regression", "Classification"]:
+            resolved_task_type = task_type
         else:
-            task_type = "Classification"
-            is_classification = True
-        
-        test_size = 0.2 if len(df) >= 10 else 0.33
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            # Auto-detect rule: float dtype or unique ratio > 5% -> Regression, else Classification
+            unique_ratio = y.nunique() / n_samples
+            if pd.api.types.is_float_dtype(y) or (unique_ratio > 0.05 and pd.api.types.is_numeric_dtype(y)) or (pd.api.types.is_numeric_dtype(y) and y.nunique() > 10):
+                resolved_task_type = "Regression"
+            else:
+                resolved_task_type = "Classification"
+                
         leaderboard = []
         
-        if is_classification:
+        # 3. 5-Fold Cross-Validation Model Training (reporting true mean scores)
+        if resolved_task_type == "Classification":
+            # For classification, encode string target if needed
+            if not pd.api.types.is_numeric_dtype(y):
+                y = pd.Categorical(y).codes
+                
+            min_class_count = pd.Series(y).value_counts().min()
+            k = max(2, min(5, n_samples, min_class_count))
+            
+            if min_class_count >= 2 and k >= 2:
+                cv = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
+            else:
+                cv = KFold(n_splits=max(2, min(5, n_samples)), shuffle=True, random_state=42)
+                
             models = {
                 "Random Forest Classifier": RandomForestClassifier(n_estimators=50, max_depth=6, random_state=42),
                 "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5, random_state=42),
                 "Logistic Regression": LogisticRegression(max_iter=500)
             }
+            
             for name, model in models.items():
                 try:
-                    model.fit(X_train, y_train)
-                    preds = model.predict(X_test)
-                    acc = accuracy_score(y_test, preds)
+                    scores = cross_val_score(model, X, y, cv=cv, scoring="accuracy")
+                    mean_score = float(np.mean(scores))
                     leaderboard.append({
                         "model": name,
-                        "metric": "Accuracy",
-                        "score": f"{round(float(acc) * 100, 1)}%",
-                        "raw_score": float(acc)
+                        "metric": "Accuracy (5-Fold CV)",
+                        "score": f"{round(mean_score * 100, 1)}%",
+                        "raw_score": mean_score
                     })
                 except Exception:
                     pass
         else:
+            k = max(2, min(5, n_samples))
+            cv = KFold(n_splits=k, shuffle=True, random_state=42)
+            
             models = {
                 "Random Forest Regressor": RandomForestRegressor(n_estimators=50, max_depth=6, random_state=42),
                 "Decision Tree Regressor": DecisionTreeRegressor(max_depth=5, random_state=42),
                 "Linear Regression": LinearRegression()
             }
+            
             for name, model in models.items():
                 try:
-                    model.fit(X_train, y_train)
-                    preds = model.predict(X_test)
-                    r2 = r2_score(y_test, preds)
-                    # Handle possible negative R2 in small test samples
-                    bounded_r2 = max(0.0, float(r2))
+                    scores = cross_val_score(model, X, y, cv=cv, scoring="r2")
+                    mean_score = float(np.mean(scores))
+                    # Preserve real values without max(0, ...) clamping
                     leaderboard.append({
                         "model": name,
-                        "metric": "R² Score",
-                        "score": f"{round(bounded_r2, 4)}",
-                        "raw_score": bounded_r2
+                        "metric": "R² Score (5-Fold CV)",
+                        "score": f"{round(mean_score, 4)}",
+                        "raw_score": mean_score
                     })
                 except Exception:
                     pass
-                
-        # Sort leaderboard descending by genuine computed raw score
-        leaderboard.sort(key=lambda x: x.get("raw_score", 0.0), reverse=True)
-        # Strip internal raw_score key from client response
-        clean_leaderboard = [{"model": item["model"], "metric": item["metric"], "score": item["score"]} for item in leaderboard]
+                    
+        # Sort leaderboard descending by raw score
+        leaderboard.sort(key=lambda x: x.get("raw_score", -999.0), reverse=True)
+        clean_leaderboard = [{"model": m["model"], "metric": m["metric"], "score": m["score"]} for m in leaderboard]
         
-        return {"task_type": task_type, "leaderboard": clean_leaderboard}
+        return {
+            "task_type": resolved_task_type,
+            "leaderboard": clean_leaderboard,
+            "folds": k,
+            "features_used": X.columns.tolist()
+        }
     except HTTPException:
         raise
     except Exception as e:
