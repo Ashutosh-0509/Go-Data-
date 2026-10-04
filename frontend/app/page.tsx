@@ -702,32 +702,35 @@ export default function Home() {
         />
       ) : (
         /* WORKSPACE VIEW */
-        <div className="flex-1 flex flex-col md:flex-row">
-          {/* Mobile Sidebar Toggle Button */}
-          <div className="md:hidden p-2.5 bg-white border-b border-[#E2E8F0] flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#CBD5E1] text-xs font-semibold text-[#0F172A]"
-            >
-              <Menu className="w-3.5 h-3.5" />
-              <span>{isSidebarOpen ? "Hide Navigation" : "Show Navigation"}</span>
-            </button>
-            <span className="text-xs text-[#64748B] font-mono truncate max-w-[180px]">
-              {fileName}
-            </span>
-          </div>
+        <div className={`flex-1 flex flex-col ${!isCitizenMode ? "md:flex-row" : ""}`}>
+          {/* Mobile Sidebar Toggle Button (Expert Mode Only) */}
+          {!isCitizenMode && (
+            <div className="md:hidden p-2.5 bg-white border-b border-[#E2E8F0] flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#F8FAFC] border border-[#CBD5E1] text-xs font-semibold text-[#0F172A]"
+              >
+                <Menu className="w-3.5 h-3.5" />
+                <span>{isSidebarOpen ? "Hide Navigation" : "Show Navigation"}</span>
+              </button>
+              <span className="text-xs text-[#64748B] font-mono truncate max-w-[180px]">
+                {fileName}
+              </span>
+            </div>
+          )}
 
-          {/* Workspace Sidebar */}
-          <aside
-            className={`w-full md:w-60 lg:w-64 bg-white border-r border-[#E2E8F0] flex flex-col flex-shrink-0 transition-all ${
-              isSidebarOpen ? "block" : "hidden md:block"
-            }`}
-          >
-            {/* Active Dataset Header */}
-            <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] mb-1">
-                Active Dataset
+          {/* Workspace Sidebar (Expert Mode Only) */}
+          {!isCitizenMode && (
+            <aside
+              className={`w-full md:w-60 lg:w-64 bg-white border-r border-[#E2E8F0] flex flex-col flex-shrink-0 transition-all ${
+                isSidebarOpen ? "block" : "hidden md:block"
+              }`}
+            >
+              {/* Active Dataset Header */}
+              <div className="p-3.5 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[#64748B] mb-1">
+                  Active Dataset
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 truncate">
@@ -959,9 +962,10 @@ export default function Home() {
               </button>
             </div>
           </aside>
+          )}
 
           {/* Main Content Workspace Body */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-x-hidden">
+          <main className={`flex-1 p-4 sm:p-6 lg:p-8 space-y-6 overflow-x-hidden ${isCitizenMode ? "w-full max-w-7xl mx-auto" : ""}`}>
             {/* Global Error Banner */}
             {errorState && (
               <ErrorState
