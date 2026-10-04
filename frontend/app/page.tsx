@@ -1000,7 +1000,9 @@ export default function Home() {
                     type="button"
                     onClick={() => setIsCitizenMode(true)}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer ${
-                      isCitizenMode ? "bg-blue-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                      isCitizenMode
+                        ? "bg-white text-blue-700 shadow-2xs border border-slate-200"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" />
@@ -1010,7 +1012,9 @@ export default function Home() {
                     type="button"
                     onClick={() => setIsCitizenMode(false)}
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-black transition-all cursor-pointer ${
-                      !isCitizenMode ? "bg-slate-900 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                      !isCitizenMode
+                        ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                        : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     <Cpu className="w-3.5 h-3.5" />
@@ -1029,7 +1033,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setIsCopilotOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                 >
                   <Terminal className="w-3.5 h-3.5" />
                   <span>Data Copilot</span>
