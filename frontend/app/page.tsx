@@ -1856,6 +1856,7 @@ export default function Home() {
                         folds={trainResult.folds}
                         totalRows={stats.total_rows}
                         featuresCount={trainResult.features_used?.length}
+                        leaderboard={trainResult.leaderboard}
                       />
                     )}
 

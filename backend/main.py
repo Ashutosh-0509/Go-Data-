@@ -9,8 +9,14 @@ import json
 from scipy import stats
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 from sklearn.linear_model import LogisticRegression, LinearRegression
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier, RandomForestRegressor,
+    GradientBoostingClassifier, GradientBoostingRegressor
+)
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.svm import SVC, SVR
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score, r2_score
 import re
 import os
@@ -322,8 +328,12 @@ async def train_models(
                 
             models = {
                 "Random Forest Classifier": RandomForestClassifier(n_estimators=50, max_depth=6, random_state=42),
+                "Gradient Boosting Classifier": GradientBoostingClassifier(n_estimators=50, random_state=42),
                 "Decision Tree Classifier": DecisionTreeClassifier(max_depth=5, random_state=42),
-                "Logistic Regression": LogisticRegression(max_iter=500)
+                "Support Vector Machine (SVM)": SVC(probability=True, random_state=42),
+                "Logistic Regression": LogisticRegression(max_iter=500),
+                "K-Nearest Neighbors (KNN)": KNeighborsClassifier(n_neighbors=min(5, max(1, n_samples - 1))),
+                "Naive Bayes": GaussianNB(),
             }
             
             for name, model in models.items():
@@ -334,7 +344,7 @@ async def train_models(
                         "model": name,
                         "metric": "Accuracy (5-Fold CV)",
                         "score": f"{round(mean_score * 100, 1)}%",
-                        "raw_score": mean_score
+                        "raw_score": round(mean_score * 100, 2)
                     })
                 except Exception:
                     pass
@@ -344,8 +354,11 @@ async def train_models(
             
             models = {
                 "Random Forest Regressor": RandomForestRegressor(n_estimators=50, max_depth=6, random_state=42),
+                "Gradient Boosting Regressor": GradientBoostingRegressor(n_estimators=50, random_state=42),
                 "Decision Tree Regressor": DecisionTreeRegressor(max_depth=5, random_state=42),
-                "Linear Regression": LinearRegression()
+                "Support Vector Regressor (SVR)": SVR(),
+                "Linear Regression": LinearRegression(),
+                "K-Nearest Neighbors Regressor": KNeighborsRegressor(n_neighbors=min(5, max(1, n_samples - 1)))
             }
             
             for name, model in models.items():
@@ -357,14 +370,22 @@ async def train_models(
                         "model": name,
                         "metric": "R² Score (5-Fold CV)",
                         "score": f"{round(mean_score, 4)}",
-                        "raw_score": mean_score
+                        "raw_score": round(mean_score * 100, 2) if mean_score >= 0 else round(mean_score, 4)
                     })
                 except Exception:
                     pass
                     
         # Sort leaderboard descending by raw score
         leaderboard.sort(key=lambda x: x.get("raw_score", -999.0), reverse=True)
-        clean_leaderboard = [{"model": m["model"], "metric": m["metric"], "score": m["score"]} for m in leaderboard]
+        clean_leaderboard = [
+            {
+                "model": m["model"],
+                "metric": m["metric"],
+                "score": m["score"],
+                "raw_score": m.get("raw_score")
+            }
+            for m in leaderboard
+        ]
         
         return {
             "task_type": resolved_task_type,

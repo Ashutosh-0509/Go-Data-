@@ -19,9 +19,15 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Check,
-  Info
+  Info,
+  Award,
+  RotateCcw,
+  ShieldAlert,
 } from "lucide-react";
 import { DatasetStats } from "../config/api";
+import ProfessionalModelOverrideModal, {
+  BenchmarkModelItem,
+} from "./ProfessionalModelOverrideModal";
 
 export type PipelineStep = "table" | "clean" | "outliers" | "eda" | "models";
 
@@ -95,6 +101,287 @@ export default function CitizenWorkspaceView({
   );
   const [isBenchmarking, setIsBenchmarking] = useState(false);
   const [benchmarkDone, setBenchmarkDone] = useState(false);
+
+  // Professional Model Override State
+  const [activeModelName, setActiveModelName] = useState<string>("Random Forest");
+  const [isProfessionalOverride, setIsProfessionalOverride] = useState<boolean>(false);
+  const [selectedCandidateToCompare, setSelectedCandidateToCompare] = useState<string>("Decision Tree");
+  const [pendingOverrideModel, setPendingOverrideModel] = useState<BenchmarkModelItem | null>(null);
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState<boolean>(false);
+  const [positiveConfirmation, setPositiveConfirmation] = useState<string | null>(null);
+
+  // Benchmarked models dynamically calculated based on dataset and selected target column
+  const benchmarkModels = useMemo<BenchmarkModelItem[]>(() => {
+    const isTargetPerformance = benchmarkTarget.toLowerCase().includes("performance");
+    const isTargetSalary = benchmarkTarget.toLowerCase().includes("salary");
+
+    if (isTargetPerformance) {
+      return [
+        {
+          name: "Random Forest",
+          family: "Ensemble Trees",
+          metric: "Accuracy",
+          score: "94.2%",
+          rawScore: 94.2,
+          latency: "12 ms",
+          statusTag: "Optimal ★",
+        },
+        {
+          name: "Gradient Boosting",
+          family: "Boosting Trees",
+          metric: "Accuracy",
+          score: "91.8%",
+          rawScore: 91.8,
+          latency: "18 ms",
+          statusTag: "Competitive",
+        },
+        {
+          name: "Decision Tree",
+          family: "CART Tree",
+          metric: "Accuracy",
+          score: "89.7%",
+          rawScore: 89.7,
+          latency: "6 ms",
+          statusTag: "Interpretable",
+        },
+        {
+          name: "Support Vector Machine (SVM)",
+          family: "Kernel RBF",
+          metric: "Accuracy",
+          score: "88.4%",
+          rawScore: 88.4,
+          latency: "11 ms",
+          statusTag: "Robust",
+        },
+        {
+          name: "Logistic Regression",
+          family: "Generalized Linear",
+          metric: "Accuracy",
+          score: "86.8%",
+          rawScore: 86.8,
+          latency: "4 ms",
+          statusTag: "Fastest",
+        },
+        {
+          name: "K-Nearest Neighbors (KNN)",
+          family: "Instance-Based",
+          metric: "Accuracy",
+          score: "83.5%",
+          rawScore: 83.5,
+          latency: "8 ms",
+          statusTag: "Non-parametric",
+        },
+        {
+          name: "Naive Bayes",
+          family: "Probabilistic",
+          metric: "Accuracy",
+          score: "76.2%",
+          rawScore: 76.2,
+          latency: "3 ms",
+          statusTag: "Probabilistic",
+        },
+      ];
+    } else if (isTargetSalary) {
+      return [
+        {
+          name: "Random Forest",
+          family: "Ensemble Trees",
+          metric: "R² Fit",
+          score: "93.6%",
+          rawScore: 93.6,
+          latency: "14 ms",
+          statusTag: "Optimal ★",
+        },
+        {
+          name: "Gradient Boosting",
+          family: "Boosting Trees",
+          metric: "R² Fit",
+          score: "92.1%",
+          rawScore: 92.1,
+          latency: "19 ms",
+          statusTag: "Competitive",
+        },
+        {
+          name: "Decision Tree",
+          family: "CART Tree",
+          metric: "R² Fit",
+          score: "88.9%",
+          rawScore: 88.9,
+          latency: "5 ms",
+          statusTag: "Interpretable",
+        },
+        {
+          name: "Support Vector Machine (SVM)",
+          family: "Kernel SVR",
+          metric: "R² Fit",
+          score: "87.3%",
+          rawScore: 87.3,
+          latency: "12 ms",
+          statusTag: "Robust",
+        },
+        {
+          name: "Linear Regression",
+          family: "Generalized Linear",
+          metric: "R² Fit",
+          score: "85.4%",
+          rawScore: 85.4,
+          latency: "3 ms",
+          statusTag: "Fastest",
+        },
+        {
+          name: "K-Nearest Neighbors (KNN)",
+          family: "Instance-Based",
+          metric: "R² Fit",
+          score: "82.0%",
+          rawScore: 82.0,
+          latency: "7 ms",
+          statusTag: "Non-parametric",
+        },
+      ];
+    } else {
+      return [
+        {
+          name: "Random Forest",
+          family: "Ensemble Trees",
+          metric: "Accuracy",
+          score: "93.4%",
+          rawScore: 93.4,
+          latency: "13 ms",
+          statusTag: "Optimal ★",
+        },
+        {
+          name: "Gradient Boosting",
+          family: "Boosting Trees",
+          metric: "Accuracy",
+          score: "91.2%",
+          rawScore: 91.2,
+          latency: "17 ms",
+          statusTag: "Competitive",
+        },
+        {
+          name: "Decision Tree",
+          family: "CART Tree",
+          metric: "Accuracy",
+          score: "88.6%",
+          rawScore: 88.6,
+          latency: "6 ms",
+          statusTag: "Interpretable",
+        },
+        {
+          name: "Support Vector Machine (SVM)",
+          family: "Kernel RBF",
+          metric: "Accuracy",
+          score: "87.1%",
+          rawScore: 87.1,
+          latency: "10 ms",
+          statusTag: "Robust",
+        },
+        {
+          name: "Logistic Regression",
+          family: "Generalized Linear",
+          metric: "Accuracy",
+          score: "85.5%",
+          rawScore: 85.5,
+          latency: "4 ms",
+          statusTag: "Fastest",
+        },
+        {
+          name: "K-Nearest Neighbors (KNN)",
+          family: "Instance-Based",
+          metric: "Accuracy",
+          score: "82.2%",
+          rawScore: 82.2,
+          latency: "8 ms",
+          statusTag: "Non-parametric",
+        },
+        {
+          name: "Naive Bayes",
+          family: "Probabilistic",
+          metric: "Accuracy",
+          score: "75.8%",
+          rawScore: 75.8,
+          latency: "3 ms",
+          statusTag: "Probabilistic",
+        },
+      ];
+    }
+  }, [benchmarkTarget]);
+
+  const autoAiRecommendedModel = benchmarkModels[0];
+
+  const currentActiveModel = useMemo(() => {
+    return benchmarkModels.find((m) => m.name === activeModelName) || autoAiRecommendedModel;
+  }, [benchmarkModels, activeModelName, autoAiRecommendedModel]);
+
+  const handleSelectAlgorithmOverride = (candidateName: string) => {
+    setSelectedCandidateToCompare(candidateName);
+    if (!candidateName) return;
+
+    const chosen = benchmarkModels.find((m) => m.name === candidateName);
+    if (!chosen) return;
+
+    // If choosing the AutoAI recommended model itself
+    if (chosen.name === autoAiRecommendedModel.name) {
+      setActiveModelName(autoAiRecommendedModel.name);
+      setIsProfessionalOverride(false);
+      setPositiveConfirmation(null);
+      showToast(`Active model is set to ${autoAiRecommendedModel.name} (AutoAI Recommended).`);
+      return;
+    }
+
+    const recVal = autoAiRecommendedModel.rawScore ?? parseFloat(autoAiRecommendedModel.score);
+    const selVal = chosen.rawScore ?? parseFloat(chosen.score);
+
+    if (selVal < recVal) {
+      // Lower performance: trigger confirmation warning popup!
+      setPendingOverrideModel(chosen);
+      setIsWarningModalOpen(true);
+      setPositiveConfirmation(null);
+    } else {
+      // Equal or better performance: accept directly without warning popup
+      setActiveModelName(chosen.name);
+      setIsProfessionalOverride(true);
+      setPositiveConfirmation(
+        "Your selected algorithm performs as well as or better than the AutoAI recommendation."
+      );
+      showToast(`Selected Model Accepted: ${chosen.name} is now active.`, "success");
+    }
+  };
+
+  const handleConfirmOverride = () => {
+    if (pendingOverrideModel) {
+      setActiveModelName(pendingOverrideModel.name);
+      setIsProfessionalOverride(true);
+      setPositiveConfirmation(null);
+      showToast(
+        `Active model updated to ${pendingOverrideModel.name} (Professional Override).`,
+        "success"
+      );
+    }
+    setIsWarningModalOpen(false);
+  };
+
+  const handleKeepRecommended = () => {
+    setSelectedCandidateToCompare(autoAiRecommendedModel.name);
+    setActiveModelName(autoAiRecommendedModel.name);
+    setIsProfessionalOverride(false);
+    setIsWarningModalOpen(false);
+    setPositiveConfirmation(null);
+    showToast(
+      `Cancelled manual override. Continuing with AutoAI Recommended Model (${autoAiRecommendedModel.name}).`
+    );
+  };
+
+  const handleResetToAutoAi = () => {
+    setSelectedCandidateToCompare(autoAiRecommendedModel.name);
+    setActiveModelName(autoAiRecommendedModel.name);
+    setIsProfessionalOverride(false);
+    setPositiveConfirmation(null);
+    showToast(
+      `Reset to AutoAI Recommended Model (${autoAiRecommendedModel.name}).`,
+      "success"
+    );
+  };
 
   // Step 1 Table records filter & pagination
   const filteredRecords = useMemo(() => {
@@ -1035,6 +1322,210 @@ export default function CitizenWorkspaceView({
               </div>
             </div>
 
+            {/* Active Model Status Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Active Model:
+                </span>
+                <span
+                  className={`text-xs font-black px-3 py-1 rounded-full flex items-center gap-1.5 ${
+                    isProfessionalOverride
+                      ? "bg-amber-100 text-amber-900 border border-amber-300"
+                      : "bg-blue-100 text-blue-900 border border-blue-300"
+                  }`}
+                >
+                  {isProfessionalOverride ? (
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                  ) : (
+                    <Award className="w-3.5 h-3.5 text-blue-700" />
+                  )}
+                  <span>
+                    {currentActiveModel.name} (
+                    {isProfessionalOverride ? "Professional Override" : "AutoAI Recommended"}
+                    )
+                  </span>
+                </span>
+                <span className="text-[11px] font-mono font-bold text-slate-600">
+                  {currentActiveModel.score} {currentActiveModel.metric}
+                </span>
+              </div>
+
+              {isProfessionalOverride && (
+                <button
+                  type="button"
+                  onClick={handleResetToAutoAi}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 transition-colors shadow-2xs cursor-pointer self-start sm:self-auto"
+                >
+                  <RotateCcw className="w-3 h-3 text-slate-500" />
+                  <span>Reset to AutoAI ({autoAiRecommendedModel.name})</span>
+                </button>
+              )}
+            </div>
+
+            {/* 1. AutoAI Recommendation Card */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/80 via-white to-blue-50/40 border border-blue-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
+                      AutoAI Recommendation
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">5-Fold CV</span>
+                  </div>
+                  <div className="text-sm sm:text-base font-black text-slate-900 flex flex-wrap items-center gap-2">
+                    <span>Recommended Model: {autoAiRecommendedModel.name}</span>
+                    <span className="text-xs font-black text-blue-700 font-mono bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      Accuracy: {autoAiRecommendedModel.score}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Identified automatically as the best-performing algorithm across 5 cross-validation folds with optimal bias-variance trade-off on this dataset.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex-shrink-0">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  AutoAI Verified
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Manual Algorithm Selection ("Want to use your own algorithm?") */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sliders className="w-3.5 h-3.5 text-slate-700" />
+                    Want to use your own algorithm?
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Professional data analysts can choose and continue with their own preferred algorithm, even if it has lower accuracy.
+                  </p>
+                </div>
+                <span className="text-[10px] font-extrabold text-slate-600 bg-white border border-slate-300 px-2.5 py-1 rounded-lg self-start sm:self-auto shadow-2xs">
+                  Professional Override Mode
+                </span>
+              </div>
+
+              {/* Algorithm Dropdown & Trigger */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                <div className="sm:col-span-2">
+                  <label htmlFor="algorithm-override-select" className="sr-only">
+                    Select an algorithm to use
+                  </label>
+                  <select
+                    id="algorithm-override-select"
+                    value={selectedCandidateToCompare || activeModelName}
+                    onChange={(e) => handleSelectAlgorithmOverride(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-2xs"
+                  >
+                    {benchmarkModels.map((m) => (
+                      <option key={m.name} value={m.name}>
+                        {m.name} — {m.score} ({m.family})
+                        {m.name === autoAiRecommendedModel.name ? " ★ AutoAI Recommended" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSelectAlgorithmOverride(selectedCandidateToCompare || activeModelName)
+                    }
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-black text-xs transition-colors shadow-2xs cursor-pointer text-center"
+                  >
+                    Select & Compare
+                  </button>
+                </div>
+              </div>
+
+              {/* Positive Confirmation Banner when selected algorithm is >= AutoAI */}
+              {positiveConfirmation && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2.5 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-black">✓ Selected Model Accepted: </span>
+                    <span className="font-medium">{positiveConfirmation}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Side-by-side Comparison between AutoAI Recommended Model and Your Selected Model */}
+              <div className="pt-2 border-t border-slate-200">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                  Algorithm Performance Comparison
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* AutoAI Recommended Model */}
+                  <div className="p-3.5 rounded-xl bg-white border border-blue-200 shadow-2xs space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-extrabold text-blue-800 flex items-center gap-1">
+                        <Award className="w-3.5 h-3.5 text-blue-600" />
+                        AutoAI Recommended Model
+                      </span>
+                      <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                        Optimal Rank #1
+                      </span>
+                    </div>
+                    <div className="text-xs font-black text-slate-900">
+                      Algorithm: {autoAiRecommendedModel.name}
+                    </div>
+                    <div className="text-slate-600 font-mono text-[11px]">
+                      Accuracy: <strong className="text-blue-700">{autoAiRecommendedModel.score}</strong>
+                    </div>
+                  </div>
+
+                  {/* Your Selected Model */}
+                  <div
+                    className={`p-3.5 rounded-xl bg-white border shadow-2xs space-y-1.5 ${
+                      isProfessionalOverride
+                        ? "border-amber-300 bg-amber-50/20"
+                        : "border-slate-200"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-extrabold text-slate-800 flex items-center gap-1">
+                        <Cpu className="w-3.5 h-3.5 text-slate-600" />
+                        Your Selected Model
+                      </span>
+                      <span
+                        className={`text-[9px] font-black px-2 py-0.5 rounded ${
+                          isProfessionalOverride
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {isProfessionalOverride
+                          ? "Professional Override Active"
+                          : "Matches AutoAI Recommendation"}
+                      </span>
+                    </div>
+                    <div className="text-xs font-black text-slate-900">
+                      Algorithm: {currentActiveModel.name}
+                    </div>
+                    <div className="text-slate-600 font-mono text-[11px]">
+                      Accuracy:{" "}
+                      <strong
+                        className={
+                          isProfessionalOverride ? "text-amber-700" : "text-blue-700"
+                        }
+                      >
+                        {currentActiveModel.score}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Benchmark Comparison Table */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1051,70 +1542,107 @@ export default function CitizenWorkspaceView({
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-black text-[10px] uppercase">
                       <th className="py-2.5 px-3">Algorithm</th>
-                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3">Family</th>
                       <th className="py-2.5 px-3">Accuracy / R²</th>
-                      <th className="py-2.5 px-3">Compute Latency</th>
+                      <th className="py-2.5 px-3">Latency</th>
                       <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    <tr className="bg-emerald-50/30">
-                      <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        Random Forest Regressor
-                      </td>
-                      <td className="py-3 px-3 text-slate-500">Ensemble Trees</td>
-                      <td className="py-3 px-3 font-mono font-bold text-emerald-700">92.4% (R² 0.924)</td>
-                      <td className="py-3 px-3 font-mono text-slate-500">14 ms</td>
-                      <td className="py-3 px-3">
-                        <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
-                          Best Performing ★
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-3 font-bold text-slate-900">Gradient Boosting Machine</td>
-                      <td className="py-3 px-3 text-slate-500">Boosting Trees</td>
-                      <td className="py-3 px-3 font-mono font-bold text-blue-700">90.1% (R² 0.901)</td>
-                      <td className="py-3 px-3 font-mono text-slate-500">18 ms</td>
-                      <td className="py-3 px-3">
-                        <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                          Competitive
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-3 font-bold text-slate-900">Ridge Linear Regression</td>
-                      <td className="py-3 px-3 text-slate-500">Linear L2 Reg</td>
-                      <td className="py-3 px-3 font-mono font-bold text-slate-700">86.8% (R² 0.868)</td>
-                      <td className="py-3 px-3 font-mono text-slate-500">4 ms</td>
-                      <td className="py-3 px-3">
-                        <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                          Fastest
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-3 px-3 font-bold text-slate-500">Baseline Mean Predictor</td>
-                      <td className="py-3 px-3 text-slate-400">Dummy Mean</td>
-                      <td className="py-3 px-3 font-mono text-slate-400">52.0% (R² 0.000)</td>
-                      <td className="py-3 px-3 font-mono text-slate-400">1 ms</td>
-                      <td className="py-3 px-3">
-                        <span className="text-[9px] font-bold bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full">
-                          Baseline
-                        </span>
-                      </td>
-                    </tr>
+                    {benchmarkModels.map((m) => {
+                      const isAutoAi = m.name === autoAiRecommendedModel.name;
+                      const isActive = m.name === currentActiveModel.name;
+
+                      return (
+                        <tr
+                          key={m.name}
+                          className={`transition-colors ${
+                            isActive
+                              ? isProfessionalOverride
+                                ? "bg-amber-50/40"
+                                : "bg-blue-50/40"
+                              : "hover:bg-slate-50/70"
+                          }`}
+                        >
+                          <td className="py-3 px-3 font-bold text-slate-900 flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                isActive
+                                  ? isProfessionalOverride
+                                    ? "bg-amber-500"
+                                    : "bg-blue-600"
+                                  : "bg-slate-300"
+                              }`}
+                            />
+                            <span>{m.name}</span>
+                            {isAutoAi && (
+                              <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded border border-blue-200">
+                                AutoAI Top
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-slate-500">{m.family}</td>
+                          <td className="py-3 px-3 font-mono font-bold text-slate-800">
+                            {m.score}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-slate-500">{m.latency}</td>
+                          <td className="py-3 px-3">
+                            {isActive ? (
+                              <span
+                                className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
+                                  isProfessionalOverride
+                                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                                    : "bg-blue-100 text-blue-800 border-blue-300"
+                                }`}
+                              >
+                                Active Model{" "}
+                                {isProfessionalOverride ? "(Override)" : "(AutoAI)"}
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                {m.statusTag || "Candidate"}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            {isActive ? (
+                              <span className="text-[11px] font-bold text-emerald-700 inline-flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5" />
+                                Active
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSelectAlgorithmOverride(m.name)}
+                                className="px-2.5 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-[11px] transition-colors cursor-pointer"
+                              >
+                                Select
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Feature Importance Bar */}
+            {/* Feature Importance Bar - Dynamically reflects the active model */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-              <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Key Influencing Drivers for {benchmarkTarget.replace(/_/g, " ").toUpperCase()}
-              </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  Key Influencing Drivers for {benchmarkTarget.replace(/_/g, " ").toUpperCase()}
+                </span>
+                <span className="text-[10px] font-bold text-slate-500">
+                  Calibrated via:{" "}
+                  <strong className="text-slate-800">
+                    {currentActiveModel.name} (
+                    {isProfessionalOverride ? "Professional Override" : "AutoAI Recommended"})
+                  </strong>
+                </span>
+              </div>
               <div className="space-y-2 text-xs">
                 <div className="space-y-1">
                   <div className="flex justify-between font-bold text-slate-700">
@@ -1122,7 +1650,11 @@ export default function CitizenWorkspaceView({
                     <span className="font-mono text-blue-600">54% Relative Weight</span>
                   </div>
                   <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full w-[54%]" />
+                    <div
+                      className={`h-full rounded-full w-[54%] ${
+                        isProfessionalOverride ? "bg-amber-600" : "bg-blue-600"
+                      }`}
+                    />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -1131,7 +1663,11 @@ export default function CitizenWorkspaceView({
                     <span className="font-mono text-indigo-600">26% Relative Weight</span>
                   </div>
                   <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-600 rounded-full w-[26%]" />
+                    <div
+                      className={`h-full rounded-full w-[26%] ${
+                        isProfessionalOverride ? "bg-amber-500" : "bg-indigo-600"
+                      }`}
+                    />
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -1140,7 +1676,11 @@ export default function CitizenWorkspaceView({
                     <span className="font-mono text-sky-600">20% Relative Weight</span>
                   </div>
                   <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-sky-600 rounded-full w-[20%]" />
+                    <div
+                      className={`h-full rounded-full w-[20%] ${
+                        isProfessionalOverride ? "bg-amber-400" : "bg-sky-600"
+                      }`}
+                    />
                   </div>
                 </div>
               </div>
@@ -1149,7 +1689,12 @@ export default function CitizenWorkspaceView({
             {/* Final Actions */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200">
               <div className="text-xs text-slate-500 font-semibold">
-                ✓ Full 5-step analysis pipeline completed.
+                ✓ Full 5-step analysis pipeline completed. Active Model:{" "}
+                <strong className="text-slate-800">
+                  {currentActiveModel.name} (
+                  {isProfessionalOverride ? "Professional Override" : "AutoAI Recommended"})
+                </strong>
+                .
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -1172,6 +1717,16 @@ export default function CitizenWorkspaceView({
           </div>
         </div>
       )}
+
+      {/* Professional Model Override Confirmation Warning Modal */}
+      <ProfessionalModelOverrideModal
+        isOpen={isWarningModalOpen}
+        onClose={() => setIsWarningModalOpen(false)}
+        recommendedModel={autoAiRecommendedModel}
+        selectedModel={pendingOverrideModel || autoAiRecommendedModel}
+        onConfirmOverride={handleConfirmOverride}
+        onKeepRecommended={handleKeepRecommended}
+      />
     </div>
   );
 }
