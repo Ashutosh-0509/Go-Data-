@@ -1,80 +1,195 @@
 @import "tailwindcss";
 
 :root {
-  --primary-deep: #18332F;
-  --primary-emerald: #2D6A59;
-  --primary-light: #3e8873;
-  --bg-cream: #F3F0E6;
-  --bg-surface: #EBE7DC;
-  --border-subtle: #DFDBD0;
-  --text-muted: #5A6B65;
+  --navy: #0B1220;
+  --slate: #1E293B;
+  --blue: #2563EB;
+  --teal: #0F766E;
+  --success: #16A34A;
+  --warning: #D97706;
+  --error: #DC2626;
+  --bg-page: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+  --border-color: #E2E8F0;
+  --text-main: #0F172A;
+  --text-secondary: #475569;
 }
 
 body {
-  background-color: var(--bg-cream);
-  color: var(--primary-deep);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: var(--font-inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Solid Crisp Navbar */
-.glass-nav {
-  background: #F3F0E6;
-  border-bottom: 1px solid #DFDBD0;
-  box-shadow: 0 2px 10px rgba(24, 51, 47, 0.04);
+/* Card Design Tokens - 1px border, subtle shadow, 8-12px radius */
+.enterprise-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0.625rem; /* 10px */
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 10px 30px rgba(24, 51, 47, 0.05);
+.enterprise-card-interactive {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0.625rem;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.glass-card-dark {
-  background: rgba(24, 51, 47, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(45, 106, 89, 0.35);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+.enterprise-card-interactive:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
 }
 
-.glass-modal {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(223, 219, 208, 0.8);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+/* Crisp Technical Table Styling */
+.table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bg-surface);
 }
 
-/* Custom Scrollbar */
+.enterprise-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.25rem;
+}
+
+.enterprise-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #F8FAFC;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.enterprise-table tbody tr {
+  border-bottom: 1px solid #F1F5F9;
+  transition: background-color 0.1s ease;
+}
+
+.enterprise-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.enterprise-table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.enterprise-table td {
+  padding: 0.5rem 0.875rem;
+  color: var(--text-main);
+  border-bottom: 1px solid #F1F5F9;
+  white-space: nowrap;
+}
+
+/* Number alignment */
+/* Number alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 3D Perspective and Elevation Depth */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-3d-card {
+  transform: rotateX(5deg) rotateY(-6deg) rotateZ(0.5deg);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rotate-3d-card:hover {
+  transform: rotateX(1deg) rotateY(-2deg) rotateZ(0deg) translateY(-4px);
+}
+
+.shadow-3d {
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 12px 24px -8px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+.shadow-3d-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shadow-3d-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.12), 0 8px 20px -6px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+/* Gentle Floating Animations */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes floatGentleDelayed {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatGentleDelayed 5s ease-in-out infinite 1s;
+}
+
+/* Sleek Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(235, 231, 220, 0.5);
+  background: #F1F5F9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2D6A59;
-  border-radius: 4px;
+  background: #CBD5E1;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #18332F;
+  background: #94A3B8;
 }
 
-/* Subtle Shimmer Animation */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+/* Subtle skeleton pulse */
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-.shimmer-bg {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s infinite;
+.skeleton-shimmer {
+  animation: subtle-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: #E2E8F0;
 }

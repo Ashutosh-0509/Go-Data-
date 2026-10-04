@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Data Analyst — Automated Data Profiling, Cleaning, EDA & AutoML</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+:root {
+  --ink: #0a0a14;
+  --mute: #6b6b80;
+  --brand: #2f35d9;
+  --line: #dcdce6;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+html {
+  scroll-padding-top: env(safe-area-inset-top, 0px);
+  scroll-behavior: smooth;
+}
+body {
+  background: #ffffff;
+  color: var(--ink);
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+.w {
+  width: min(1060px, 92%);
+  margin: 0 auto;
+}
+
+/* Navigation */
+nav {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1060px, 94%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 50;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0, 0, 40, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+.logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo {
+  border: 1.5px solid #3a5bff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--brand);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.seg {
+  display: flex;
+  background: #eceef6;
+  border-radius: 99px;
+  padding: 3px;
+}
+.seg span {
+  padding: 5px 14px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.seg .on {
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+nav .links {
+  display: flex;
+  gap: 22px;
+  font-weight: 600;
+  color: #333344;
+}
+nav .links span {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+nav .links span:hover {
+  color: var(--brand);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 99px;
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+  font: 700 13px 'Manrope', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 10px rgba(47, 53, 217, 0.25);
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(47, 53, 217, 0.35);
+}
+.btn:active {
+  transform: translateY(0);
+}
+.btn.w2 {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+.btn.w2:hover {
+  background: #f8f9fc;
+}
+.btn.lite {
+  background: #2f6bff;
+  box-shadow: 0 2px 10px rgba(47, 107, 255, 0.3);
+}
+
+h1, h2 {
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+h1 {
+  font-size: clamp(28px, 4vw, 48px);
+}
+.hero-title {
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.hero-title .hero-line {
+  display: block;
+}
+@media (min-width: 600px) {
+  .hero-title .hero-line {
+    white-space: nowrap;
+  }
+}
+.desktop-window-mockup {
+  position: absolute;
+  width: 440px;
+  height: 310px;
+  left: -40px;
+  top: 40px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.22);
+  z-index: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Manrope', sans-serif;
+  animation: arcSlab2 8.5s ease-in-out infinite 0.2s;
+}
+@media (max-width: 768px) {
+  .desktop-window-mockup {
+    display: none;
+  }
+}
+.desk-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+.desk-lights {
+  display: flex;
+  gap: 5px;
+}
+.desk-lights span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.desk-url {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  padding: 3px 12px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.desk-subbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 10px;
+}
+.desk-table {
+  width: 100%;
+  padding: 10px;
+  font-size: 9.5px;
+  color: #1e293b;
+}
+.desk-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.desk-table th {
+  text-align: left;
+  padding: 4px 6px;
+  color: #64748b;
+  font-size: 8.5px;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+}
+.desk-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid #f8fafc;
+}
+h2 {
+  font-size: clamp(28px, 3.6vw, 44px);
+}
+p.sub {
+  color: var(--mute);
+  margin: 14px 0 24px;
+  font-size: 15px;
+  max-width: 36ch;
+  line-height: 1.5;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  background: linear-gradient(120deg, #3b9bff 0%, #3fc4f5 55%, #3eeaee 100%);
+  padding: 96px 0 30px;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.banner {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1060px, 94%);
+  padding: 8px 12px;
+  text-align: center;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #2a45ff, #3d7bff);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 16px rgba(42, 69, 255, 0.25);
+  z-index: 10;
+}
+.hero .w {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  min-height: calc(100vh - 96px);
+  gap: 20px;
+}
+.hero h1, .hero p.sub {
+  color: #fff;
+}
+.hero p.sub {
+  opacity: 0.95;
+  font-weight: 500;
+}
+.stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 36px;
+  color: #fff;
+  font-size: 11px;
+}
+.stats div {
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50% 50% 40% 40% / 30% 30% 60% 60%;
+  padding: 10px 14px;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s ease;
+}
+.stats div:hover {
+  transform: translateY(-2px);
+}
+.stats b {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+@keyframes dropDown {
+  from { opacity: 0; transform: translateY(-24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.banner { animation: dropDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.hero h1 { animation: dropDown 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both; }
+.hero p.sub { animation: dropDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both; }
+.hero .copy .btn { animation: dropDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both; }
+.stats { animation: dropDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.65s both; }
+
+@keyframes arcSlab1 {
+  0%, 100% {
+    transform: translate(-35px, 20px) rotate(-18deg);
+  }
+  25% {
+    transform: translate(-15px, -18px) rotate(-12deg);
+  }
+  50% {
+    transform: translate(15px, -36px) rotate(-5deg);
+  }
+  75% {
+    transform: translate(40px, 12px) rotate(4deg);
+  }
+}
+@keyframes arcSlab2 {
+  0%, 100% {
+    transform: translate(25px, 16px) rotate(18deg);
+  }
+  50% {
+    transform: translate(-20px, -28px) rotate(10deg);
+  }
+}
+@keyframes arcSlab3 {
+  0%, 100% {
+    transform: translate(-15px, 18px) rotate(8deg);
+  }
+  50% {
+    transform: translate(20px, -14px) rotate(0deg);
+  }
+}
+
+.art {
+  position: relative;
+  height: 560px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+}
+.slab {
+  position: absolute;
+  border-radius: 30px;
+  will-change: transform, opacity;
+}
+.checker {
+  background: conic-gradient(#2f7fe6 25%, #42b8f2 0 50%, #2f7fe6 0 75%, #42b8f2 0) 0 0/36px 36px;
+}
+#hl {
+  width: 300px;
+  height: 400px;
+  left: 10px;
+  animation: arcSlab1 8.5s ease-in-out infinite;
+}
+#hn {
+  width: 230px;
+  height: 330px;
+  right: 50px;
+  top: 40px;
+  background: #16135f;
+  border-radius: 24px;
+  animation: arcSlab2 9.2s ease-in-out infinite 0.4s;
+}
+#hr {
+  width: 300px;
+  height: 300px;
+  right: -40px;
+  bottom: 30px;
+  background: #ff8fb1;
+  border-radius: 20px;
+  clip-path: polygon(0 0, 100% 6%, 96% 12%, 100% 20%, 95% 30%, 100% 40%, 94% 52%, 100% 64%, 95% 76%, 100% 88%, 96% 100%, 0 100%);
+  animation: arcSlab3 7.8s ease-in-out infinite 0.8s;
+}
+
+/* ========================================================
+   PREMIUM SILVER METALLIC PHONE MOCKUP WITH 3D TILT
+   ======================================================== */
+.phone {
+  position: relative;
+  width: 260px;
+  height: 535px;
+  border-radius: 42px;
+  background: #ffffff;
+  /* Multi-stage polished silver chrome border */
+  border: 7px solid #dfe3ea;
+  box-shadow: 
+    0 0 0 1px #cbd0dc,
+    0 0 0 2.5px #f4f6fa,
+    -12px 18px 45px rgba(10, 15, 45, 0.28),
+    0 25px 60px rgba(25, 35, 80, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+  overflow: hidden;
+  color: #111;
+  z-index: 2;
+  /* Realistic 3D tilt */
+  transform: perspective(1200px) rotateY(-8deg) rotateX(4deg) rotateZ(0.5deg);
+  transform-style: preserve-3d;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.phone:hover {
+  transform: perspective(1200px) rotateY(-4deg) rotateX(2deg) rotateZ(0deg) scale(1.02);
+  box-shadow: 
+    0 0 0 1px #cbd0dc,
+    0 0 0 2.5px #f4f6fa,
+    -16px 24px 55px rgba(10, 15, 45, 0.32),
+    0 35px 75px rgba(25, 35, 80, 0.26),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+}
+/* Metallic chassis edge reflection highlight */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 75px;
+  right: -7px;
+  width: 3.5px;
+  height: 52px;
+  background: linear-gradient(180deg, #9ca3af, #ffffff 40%, #b0b4be);
+  border-radius: 2px;
+  z-index: 10;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+}
+.phone::after {
+  content: '';
+  position: absolute;
+  top: 80px;
+  left: -7px;
+  width: 3.5px;
+  height: 40px;
+  background: linear-gradient(180deg, #b0b4be, #ffffff 50%, #9ca3af);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+/* Phone Screen UI */
+.screen {
+  position: absolute;
+  inset: 0;
+  padding: 12px 14px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Status bar & Dynamic Island */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px;
+  font-weight: 700;
+  font-size: 10px;
+  color: #111;
+}
+.dynamic-island {
+  width: 68px;
+  height: 16px;
+  background: #000000;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+}
+.camera-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #111827;
+  border: 1px solid #1f2937;
+}
+
+/* App Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 2px;
+}
+.ens-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ens-title span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ens-title small {
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Account Balances Row */
+.wallet-hero {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 2px;
+}
+.avatar-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a78bfa, #60a5fa, #38bdf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgba(96, 165, 250, 0.3);
+}
+.bal-info {
+  display: flex;
+  flex-direction: column;
+}
+.bal-info .big {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0b1220;
+  line-height: 1.1;
+}
+.pnl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-top: 2px;
+  width: fit-content;
+}
+
+/* Quick Action Pills */
+.actions-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin: 2px 0;
+}
+.action-btn {
+  padding: 6px 2px;
+  border-radius: 10px;
+  background: #f1f3f9;
+  text-align: center;
+  font-weight: 700;
+  font-size: 9.5px;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.action-btn:hover {
+  background: #e4e7f2;
+}
+
+/* Sub-nav Tabs */
+.tabs-row {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1.5px solid #f1f3f9;
+  padding-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+}
+.tabs-row .tab-on {
+  color: #0f172a;
+  position: relative;
+}
+.tabs-row .tab-on::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  background: #0f172a;
+  border-radius: 2px;
+}
+
+/* Chart Card */
+.chart-card {
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.chart-header b {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.chart-header span {
+  font-size: 9px;
+  color: #10b981;
+  font-weight: 700;
+}
+.chart-svg {
+  height: 68px;
+  width: 100%;
+}
+.timeframe-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 2px 0;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.timeframe-row span.on {
+  color: #0f172a;
+  background: #e2e8f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Token Rows */
+.token-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #f1f3f7;
+}
+.token-row .left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.token-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 9px;
+  color: #fff;
+}
+.icon-eth { background: #627eea; }
+.icon-usdc { background: #2775ca; }
+.icon-sol { background: linear-gradient(135deg, #9945ff, #14f195); }
+.token-details {
+  display: flex;
+  flex-direction: column;
+}
+.token-details b {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.token-details small {
+  font-size: 8.5px;
+  color: #64748b;
+}
+.token-val {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+.token-val b {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.token-val small {
+  font-size: 8.5px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Swap Field for screen 2 */
+.field {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f3f4fb;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 11px;
+}
+.swapbtn {
+  margin-top: auto;
+  padding: 11px;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(47, 53, 217, 0.25);
+}
+
+/* ========================================================
+   PINNED STORY SECTION - ROCK-SOLID VIEWPORT PINNING
+   ======================================================== */
+.pin {
+  position: relative;
+  height: 350vh; /* Slow, smooth and deliberate scroll pace */
+  background: #ffffff;
+}
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  overflow: hidden;
+  background: #ffffff;
+  z-index: 10;
+}
+.stage .copy {
+  position: relative;
+  height: 260px;
+}
+.stage .copy > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start; /* FIX: Keep button compact, avoid full-width stretch */
+  will-change: transform, opacity;
+  transition: opacity 0.15s ease-out;
+}
+.stage .copy .btn {
+  display: inline-flex;
+  width: auto;
+  align-self: flex-start;
+  padding: 12px 28px;
+  font-size: 13.5px;
+  margin-top: 10px;
+}
+.stage .art {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+}
+#pA {
+  width: 290px;
+  height: 400px;
+  left: -20px;
+  transform: rotate(-12deg);
+  will-change: transform, opacity;
+}
+#pB {
+  width: 340px;
+  height: 440px;
+  right: -10px;
+  background: linear-gradient(160deg, #ff6aa6, #8a3dff);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+#pC {
+  width: 300px;
+  height: 410px;
+  right: -10px;
+  background: linear-gradient(160deg, #3b3fe8, #16135f);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.chips {
+  position: absolute;
+  right: -25px;
+  top: 95px; /* FIX: lowered so it is not truncated at viewport top */
+  width: 275px;
+  transform: rotate(6deg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 14px 16px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(30, 90, 230, 0.92), rgba(15, 55, 185, 0.94));
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 16px 36px rgba(15, 35, 140, 0.32);
+  will-change: transform, opacity;
+  z-index: 25;
+}
+.chip {
+  padding: 5px 11px;
+  border-radius: 99px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  will-change: transform, opacity;
+}
+.chip.chip-more {
+  background: #06b6d4;
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4);
+}
+.fcard {
+  position: absolute;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(20, 105, 240, 0.94) 0%, rgba(14, 165, 233, 0.90) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 16px 36px rgba(10, 45, 160, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  will-change: transform, opacity;
+  pointer-events: auto;
+  z-index: 35;
+}
+.fcard .ficon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.fcard .ftext {
+  flex: 1;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.fcard .prem-tag {
+  background: linear-gradient(90deg, #f43f5e, #ec4899);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 99px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(236, 72, 153, 0.4);
+  flex-shrink: 0;
+}
+.pw {
+  position: relative;
+  z-index: 15;
+}
+
+/* ========================================================
+   TESTIMONIALS SECTION - PINNED SCROLL-DRIVEN 3D CARD STACK
+   ======================================================== */
+.tpin {
+  position: relative;
+  height: 320vh; /* Controlled scroll travel for stack */
+  background: #ffffff;
+  z-index: 20;
+}
+.tstage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  align-items: center;
+  gap: 36px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.deck {
+  position: relative;
+  height: 340px;
+  width: 380px;
+  perspective: 1200px;
+}
+.rev {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 290px;
+  height: 330px;
+  border-radius: 24px;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.45;
+  font-size: 15px;
+  box-shadow: 0 20px 45px rgba(0, 0, 50, 0.22);
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+}
+.dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 24px;
+}
+.dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 9px;
+  background: #e4e5f1;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+.dots i.on {
+  width: 24px;
+  background: var(--brand);
+}
+
+/* Community Section */
+.love {
+  text-align: center;
+  padding: 90px 0 40px;
+}
+.cards {
+  position: relative;
+  height: 420px;
+  max-width: 560px;
+  margin: 40px auto 0;
+}
+.cc {
+  position: absolute;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: left;
+  font-weight: 800;
+  font-size: 17px;
+  box-shadow: 0 12px 30px rgba(20, 20, 80, 0.15);
+  will-change: transform;
+}
+.cc small {
+  display: block;
+  font-weight: 500;
+  font-size: 11px;
+  margin: 6px 0 12px;
+  opacity: 0.85;
+}
+.cc .btn {
+  padding: 7px 13px;
+  font-size: 11px;
+}
+.soc {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 50px;
+}
+.soc i {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f6f6fa;
+}
+.ban {
+  border-radius: 16px;
+  padding: 42px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  min-height: 200px;
+  overflow: hidden;
+}
+.ban h3 {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 14px 0 8px;
+  max-width: 20ch;
+}
+.ban p {
+  font-size: 13px;
+  opacity: 0.88;
+  max-width: 38ch;
+  margin-bottom: 16px;
+}
+.tag {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: 700;
+}
+.api {
+  background: linear-gradient(120deg, #16135f, #2a47f0);
+}
+.blog {
+  background: linear-gradient(120deg, #16135f 30%, #4aa3ff);
+}
+.stack {
+  width: 140px;
+  display: grid;
+  gap: 10px;
+}
+.stack i {
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(120, 160, 255, 0.45);
+}
+.horn {
+  width: 130px;
+  height: 130px;
+  border-radius: 28px;
+  background: #ff9ec0;
+  transform: rotate(-12deg);
+}
+
+/* FAQ */
+.faq {
+  padding: 50px 0;
+  text-align: center;
+}
+.faq h2 {
+  margin-bottom: 30px;
+}
+.grp {
+  width: min(460px, 92%);
+  margin: 0 auto 22px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-align: left;
+  background: #ffffff;
+}
+.grp details {
+  padding: 13px 16px;
+  font-weight: 700;
+  font-size: 12px;
+}
+.grp details + details {
+  border-top: 1px solid #eee;
+}
+.grp summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+}
+.grp summary::after {
+  content: "⌄";
+  color: #999;
+  font-size: 14px;
+}
+.grp p {
+  margin-top: 8px;
+  font-weight: 500;
+  color: var(--mute);
+  line-height: 1.4;
+}
+
+/* CTA */
+.cta {
+  border-radius: 16px;
+  padding: 60px 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(110deg, #55a8ff, #2b2fe0);
+  margin: 30px auto 56px;
+  width: min(920px, 92%);
+  box-shadow: 0 20px 45px rgba(43, 47, 224, 0.2);
+}
+.cta h2 {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+.cta p {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 22px;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 36px 0 90px;
+  display: grid;
+  grid-template-columns: 1.1fr repeat(5, 1fr);
+  gap: 20px;
+  font-size: 11px;
+  color: #555;
+}
+footer b {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  color: #777;
+}
+footer span {
+  display: block;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+footer span:hover {
+  color: var(--brand);
+}
+
+/* Cookie Bar */
+.cookie {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  padding: 10px 4vw calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  box-shadow: 0 -2px 14px rgba(0, 0, 0, 0.08);
+  z-index: 60;
+}
+.cookie .btn {
+  padding: 6px 14px;
+  font-size: 11px;
+}
+
+@media (max-width: 820px) {
+  nav .links, nav .seg {
+    display: none;
+  }
+  .hero .w, .stage, .tstage {
+    grid-template-columns: 1fr;
+  }
+  .hero .art {
+    height: 420px;
+  }
+  .stage .art {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .stage .copy {
+    z-index: 3;
+    margin-top: 70px;
+    height: 200px;
+    padding: 0 4%;
+  }
+  .ban {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px;
+  }
+  footer {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tstage .deck {
+    margin: 24px 0 0 4%;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo-wrap">
+    <span class="logo">Smart Data Analyst</span>
+    <div class="seg">
+      <span class="on">Workspace</span>
+      <span>Technical Details</span>
+    </div>
+  </div>
+  <div class="links">
+    <span>Features</span>
+    <span>Resources</span>
+    <span>About</span>
+  </div>
+  <button class="btn" id="navGetBtn">Start with Your Dataset</button>
+</nav>
+
+<!-- HERO SECTION -->
+<header class="hero">
+  <div class="w">
+    <div class="copy">
+      <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:11px;font-weight:700;margin-bottom:14px">
+        <span style="width:7px;height:7px;border-radius:50%;background:#34d399"></span>
+        Automated EDA, Cleaning & AutoML Platform
+      </div>
+      <h1 class="hero-title">
+        <span class="hero-line">From raw data</span>
+        <span class="hero-line">to ready insights.</span>
+      </h1>
+      <p class="sub">Upload a CSV or Excel dataset and turn raw data into analysis-ready insights with automated profiling, cleaning, exploration and model benchmarking.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn w2" id="heroCreateBtn">Start with Your Dataset</button>
+        <button class="btn lite" id="heroSeeHowBtn">Try Demo Dataset</button>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.9);margin-top:12px">Privacy-first • Automated analysis • Technical transparency</div>
+      <div class="stats">
+        <div><b>3</b>File formats (CSV, XLSX, XLS)</div>
+        <div><b>5</b>Step workflow</div>
+        <div><b>2</b>Outlier methods</div>
+        <div><b>100%</b>In-memory processing</div>
+      </div>
+    </div>
+    
+    <div class="art">
+      <!-- DESKTOP WEB APPLICATION WINDOW (COMPUTER TOUCH) -->
+      <div class="desktop-window-mockup" id="h-desktop">
+        <div class="desk-chrome">
+          <div class="desk-lights">
+            <span style="background:#ff5f56"></span>
+            <span style="background:#ffbd2e"></span>
+            <span style="background:#27c93f"></span>
+          </div>
+          <div class="desk-url">
+            <span style="color:#10b981">🔒</span> smartdataanalyst.ai/app/workspace
+          </div>
+          <span style="font-size:9px;font-weight:800;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:99px">Desktop Web</span>
+        </div>
+        <div class="desk-subbar">
+          <b>sales_data.xlsx <span style="color:#059669;background:#ecfdf5;padding:1px 6px;border-radius:8px">94% Health</span></b>
+          <span style="color:#64748b;font-weight:700">Overview • Profile • Clean • Models</span>
+        </div>
+        <!-- VISUAL ANALYTICS MODE (Replaced table with interactive visual charts) -->
+        <div style="padding:10px 12px;background:#ffffff;display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:5px;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;color:#0f172a">
+              <span style="width:6px;height:6px;border-radius:50%;background:#2563eb;display:inline-block"></span>
+              Regional Revenue Analytics
+            </div>
+            <span style="font-size:8px;font-weight:800;color:#2563eb;background:#eff6ff;padding:1px 6px;border-radius:99px;border:1px solid #bfdbfe">Live Visual Mode</span>
+          </div>
+
+          <!-- Multi-bar Chart -->
+          <div style="background:#f8fafc;border-radius:8px;padding:8px;border:1px solid #f1f5f9">
+            <div style="display:flex;justify-content:space-between;font-size:8px;color:#64748b;font-weight:700;margin-bottom:6px">
+              <span>Gross Sales by Region ($k)</span>
+              <span style="color:#059669;font-weight:800">↑ +18.4% Quality Gain</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:6px;align-items:end;height:68px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end">
+                <span style="font-size:7.5px;font-weight:800;color:#334155">$148k</span>
+                <div style="width:100%;height:72%;background:linear-gradient(180deg, #38bdf8, #2563eb);border-radius:3px 3px 0 0"></div>
+                <span style="font-size:7px;color:#64748b;font-weight:700">N.Amer</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end">
+                <span style="font-size:7.5px;font-weight:800;color:#334155">$92k</span>
+                <div style="width:100%;height:48%;background:linear-gradient(180deg, #60a5fa, #4f46e5);border-radius:3px 3px 0 0"></div>
+                <span style="font-size:7px;color:#64748b;font-weight:700">EMEA</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end">
+                <span style="font-size:7.5px;font-weight:800;color:#334155">$213k</span>
+                <div style="width:100%;height:94%;background:linear-gradient(180deg, #34d399, #059669);border-radius:3px 3px 0 0"></div>
+                <span style="font-size:7px;color:#64748b;font-weight:700">APAC</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end">
+                <span style="font-size:7.5px;font-weight:800;color:#334155">$89k</span>
+                <div style="width:100%;height:44%;background:linear-gradient(180deg, #f472b6, #9333ea);border-radius:3px 3px 0 0"></div>
+                <span style="font-size:7px;color:#64748b;font-weight:700">LATAM</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding-top:4px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;color:#94a3b8;font-size:8.5px;font-weight:700">
+            <span>24,580 records analyzed • 0 errors</span>
+            <span style="color:#2563eb;font-weight:800">In-Memory RAM: 4.2 MB</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- HERO PHONE: SILVER TITANIUM CHASSIS -->
+      <div class="phone" id="hp">
+        <div class="screen">
+          <!-- Top bar with Dynamic Island -->
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="dynamic-island">
+              <div class="camera-dot"></div>
+            </div>
+            <span>􀙇 􀐫</span>
+          </div>
+
+          <!-- App Navigation Bar -->
+          <div class="app-header">
+            <span>‹</span>
+            <div class="ens-title">
+              <span>sales_data.xlsx</span>
+              <small>24,580 rows • Ready ⌄</small>
+            </div>
+            <span>✨ 🛡️</span>
+          </div>
+
+          <!-- Main Dataset Metric View -->
+          <div class="wallet-hero">
+            <div class="avatar-box">📊</div>
+            <div class="bal-info">
+              <div class="big">24,580 rows</div>
+              <div class="pnl-badge">Data Quality 94%</div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="actions-row">
+            <div class="action-btn"><span>📁</span><span>Upload</span></div>
+            <div class="action-btn"><span>📊</span><span>Profile</span></div>
+            <div class="action-btn"><span>✨</span><span>Clean</span></div>
+            <div class="action-btn"><span>🔍</span><span>Explore</span></div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs-row">
+            <span class="tab-on">Summary</span>
+            <span>Columns</span>
+            <span>Quality</span>
+            <span>Insights</span>
+          </div>
+
+          <!-- Smooth Chart Card -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <b>Dataset health 94% ⓘ</b>
+              <span>3 columns need review</span>
+            </div>
+            <div class="chart-svg">
+              <svg viewBox="0 0 200 68" preserveAspectRatio="none" style="width:100%;height:100%">
+                <defs>
+                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 48 L20 44 L40 52 L60 38 L80 42 L100 24 L120 32 L140 18 L160 36 L180 28 L200 14 L200 68 L0 68 Z" fill="url(#chartGrad)"/>
+                <path d="M0 48 L20 44 L40 52 L60 38 L80 42 L100 24 L120 32 L140 18 L160 36 L180 28 L200 14" fill="none" stroke="#10b981" stroke-width="2.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="timeframe-row">
+              <span>All</span>
+              <span class="on">Numeric</span>
+              <span>Categorical</span>
+              <span>Date</span>
+              <span>Missing</span>
+            </div>
+          </div>
+
+          <!-- Columns List -->
+          <div class="token-row">
+            <div class="left">
+              <div class="token-icon" style="background:#3b82f6;color:#fff">#</div>
+              <div class="token-details">
+                <b>Sales</b>
+                <small>Numeric, 0.4% missing</small>
+              </div>
+            </div>
+            <div class="token-val">
+              <b>24,482 valid</b>
+              <small>99.6%</small>
+            </div>
+          </div>
+          <div class="token-row">
+            <div class="left">
+              <div class="token-icon" style="background:#8b5cf6;color:#fff">🏷</div>
+              <div class="token-details">
+                <b>Region</b>
+                <small>Categorical, 12 unique</small>
+              </div>
+            </div>
+            <div class="token-val">
+              <b>24,580 valid</b>
+              <small>100%</small>
+            </div>
+          </div>
+      </div>
+
+      <!-- LUMINOUS GROUND PEDESTAL & DESIGN UNDER DEVICES -->
+      <div style="position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);width:92%;display:flex;flex-direction:column;align-items:center;pointer-events:none;z-index:1;">
+        <!-- Neon Radial Glow -->
+        <div style="width:85%;height:45px;background:radial-gradient(circle, rgba(56,189,248,0.4) 0%, rgba(37,99,235,0.25) 50%, transparent 75%);filter:blur(20px);border-radius:50%;"></div>
+        <!-- Perspective Ground Plate -->
+        <div style="width:96%;height:26px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(241,245,249,0.3) 100%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 14px 34px rgba(15,23,42,0.1);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);">
+          <div style="width:200px;height:2px;background:linear-gradient(90deg, transparent, #38bdf8, transparent);box-shadow:0 0 10px #38bdf8;"></div>
+        </div>
+        <!-- Floating Ground Badges -->
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;pointer-events:auto;">
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,0.04);font-size:9.5px;font-weight:800;color:#0f172a;">
+            <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block"></span>
+            ⚡ Zero-Install Browser RAM
+          </div>
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:#2563eb;color:#fff;box-shadow:0 2px 6px rgba(37,99,235,0.25);font-size:9.5px;font-weight:800;">
+            📊 Visual Analytics Active
+          </div>
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,0.04);font-size:9.5px;font-weight:800;color:#7c3aed;">
+            🛡️ 100% Privacy Verified
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PINNED STORY SECTION -->
+<section class="pin" id="story">
+  <div class="stage w">
+    <div class="copy">
+      <!-- Step 1 Message -->
+      <div id="t1">
+        <h2>Understand<br>Your Data.</h2>
+        <p class="sub">Profile columns, types, missing values and duplicates automatically.</p>
+        <button class="btn" style="background:#3A35E0">Start with Your Dataset</button>
+      </div>
+      <!-- Step 2 Message -->
+      <div id="t2" style="opacity:0">
+        <h2>Clean Your Data.<br>Find Unusual Values.</h2>
+        <p class="sub">Fix missing values, duplicates and outliers with clear, reviewable actions.</p>
+        <button class="btn" style="background:#3A35E0">Start with Your Dataset</button>
+      </div>
+      <!-- Step 3 Message -->
+      <div id="t3" style="opacity:0">
+        <h2>Explore Patterns.<br>Build & Compare Models.</h2>
+        <p class="sub">Visualize relationships, then train and compare models on your target column.</p>
+        <button class="btn" style="background:#3A35E0">Start with Your Dataset</button>
+      </div>
+    </div>
+    
+    <div class="art">
+      <div class="slab checker" id="pA"></div>
+      <div class="slab" id="pB"></div>
+      <div class="slab" id="pC"></div>
+      <div class="chips" id="chips"></div>
+      
+      <!-- PINNED PHONE: SILVER TITANIUM WITH 3D TILT -->
+      <div class="pw">
+        <div class="phone" id="sp">
+          <!-- Screen 1: Overview View -->
+          <div class="screen" id="s1">
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="dynamic-island"><div class="camera-dot"></div></div>
+              <span>􀙇 􀐫</span>
+            </div>
+            <div class="app-header">
+              <span>‹</span>
+              <div class="ens-title">
+                <span>sales_data.xlsx</span>
+                <small>24,580 rows • Ready ⌄</small>
+              </div>
+              <span>✨ 🛡️</span>
+            </div>
+            <div class="wallet-hero" style="padding-top:4px">
+              <div style="font-size:11px;color:#64748b;font-weight:600">Dataset Overview</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:2px">
+                <div class="big" style="font-size:22px">24,580 rows</div>
+                <div class="pnl-badge" style="font-size:9.5px">Data Quality 94%</div>
+              </div>
+            </div>
+            <div class="actions-row">
+              <div class="action-btn"><span>📁</span><span>Upload</span></div>
+              <div class="action-btn"><span>📊</span><span>Profile</span></div>
+              <div class="action-btn"><span>✨</span><span>Clean</span></div>
+              <div class="action-btn" style="background:#111;color:#fff"><span>🔍</span><span>Explore</span></div>
+            </div>
+            <div class="tabs-row">
+              <span class="tab-on">Summary</span>
+              <span>Columns</span>
+              <span>Quality</span>
+              <span>Insights</span>
+            </div>
+            <div style="margin:8px 12px 4px;padding:6px 10px;background:#f8fafc;border-radius:10px;display:flex;justify-content:space-between;font-size:10px;font-weight:600">
+              <span style="display:flex;gap:4px;align-items:center"><span>⚠️</span><span>Missing values</span><span style="background:#e2e8f0;padding:1px 4px;border-radius:4px;font-size:8.5px">1.8%</span></span>
+              <b>3 columns review</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:0 12px;font-size:10px;font-weight:700;color:#334155;align-items:center">
+              <span>All Types ⌄</span>
+              <span style="background:#f1f5f9;padding:2px 6px;border-radius:6px;font-size:9px">Overview | Details</span>
+            </div>
+            <div class="chart-card" style="margin-top:6px">
+              <div class="chart-header">
+                <b>Dataset health <span style="font-size:9px;background:#f1f5f9;padding:1px 4px;border-radius:4px">94%</span></b>
+                <span>3 columns need review</span>
+              </div>
+              <div style="font-size:14px;font-weight:800;color:#0f172a;margin-top:2px">24,580 rows</div>
+              <div class="chart-svg" style="height:38px;margin-top:4px">
+                <svg viewBox="0 0 200 68" preserveAspectRatio="none" style="width:100%;height:100%">
+                  <path d="M0 50 L25 40 L50 48 L75 32 L100 38 L125 22 L150 30 L175 16 L200 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="timeframe-row">
+                <span>All</span>
+                <span class="on">Numeric</span>
+                <span>Categorical</span>
+                <span>Date</span>
+                <span>Missing</span>
+              </div>
+            </div>
+            <div class="token-row">
+              <div class="left">
+                <div class="token-icon" style="background:#3b82f6;color:#fff">#</div>
+                <div class="token-details"><b>Sales</b><small>Numeric, 0.4% missing</small></div>
+              </div>
+              <div class="token-val"><b>24,482 valid</b><small style="color:#10b981">99.6%</small></div>
+            </div>
+            <div class="token-row">
+              <div class="left">
+                <div class="token-icon" style="background:#8b5cf6;color:#fff">🏷</div>
+                <div class="token-details"><b>Region</b><small>Categorical, 12 unique</small></div>
+              </div>
+              <div class="token-val"><b>24,580 valid</b><small style="color:#10b981">100%</small></div>
+            </div>
+          </div>
+          
+          <!-- Screen 2: Clean Data View -->
+          <div class="screen" id="s2" style="opacity:0;background:#ffffff">
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="dynamic-island"><div class="camera-dot"></div></div>
+              <span>􀙇 􀐫</span>
+            </div>
+            <div class="app-header">
+              <b style="font-size:14px;color:#0f172a">Clean Data</b>
+              <span style="display:flex;gap:6px">⚙ 👤</span>
+            </div>
+            <div style="margin:8px 12px 0;padding:8px 10px;background:#f8fafc;border-radius:12px">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b"><span>Data issue detected</span><span>Column: Age</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+                <span style="display:flex;align-items:center;gap:4px;background:#fff;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">
+                  <span style="width:16px;height:16px;background:#ef4444;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px">!</span> 128 missing
+                </span>
+                <b style="font-size:13px;color:#3b82f6">Median imputation</b>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="btn lite" style="padding:2px 8px;font-size:10px">Review</button>
+                <button class="btn" style="padding:2px 8px;font-size:10px">Apply Fix</button>
+              </div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:8px 10px;margin:8px 12px 0;font-size:10px;display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;justify-content:space-between"><span>Duplicates</span><b>0.2% ›</b></div>
+              <div style="display:flex;justify-content:space-between"><span>Outliers (method IQR)</span><b style="color:#d97706">3.4% ›</b></div>
+              <div style="display:flex;justify-content:space-between"><span>Missing</span><b style="color:#10b981">1.8% ›</b></div>
+              <div style="display:flex;justify-content:space-between"><span>Schema</span><b style="color:#10b981">Passed</b></div>
+              <div style="display:flex;justify-content:space-between"><span>Method</span><b>Median imputation</b></div>
+              <div style="text-align:center;color:#94a3b8;font-size:9px">Technical Details ⌄</div>
+            </div>
+            <div class="swapbtn" style="background:#94a3b8;margin:auto 12px 8px">Analyzing</div>
+            <div style="display:flex;justify-content:space-around;padding:6px 0;border-top:1px solid #f1f5f9;font-size:9px;color:#94a3b8">
+              <span>Overview</span><span>Profile</span><span style="color:#2563eb">Clean</span><span>Explore</span><span>Models</span>
+            </div>
+          </div>
+
+          <!-- Screen 3: Build & Compare Models View -->
+          <div class="screen" id="s3" style="opacity:0;background:#ffffff">
+            <div class="status-bar">
+              <span>21:25</span>
+              <div class="dynamic-island"><div class="camera-dot"></div></div>
+              <span>􀙇 􀐫</span>
+            </div>
+            <div class="app-header" style="justify-content:flex-start">
+              <b style="font-size:14px;color:#0f172a">Build a Prediction Model</b>
+            </div>
+            <div style="padding:4px 12px;font-size:10px;color:#64748b">
+              Target: <b style="color:#0f172a">Customer Churn</b> • Classification
+            </div>
+            <div style="padding:6px 12px 0">
+              <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700">
+                <span>Models being tested</span>
+                <span>›</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+                <div style="background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:9px;display:flex;justify-content:space-between">
+                  <b>XGBoost</b><span style="color:#10b981;font-weight:700">93.1% Complete</span>
+                </div>
+                <div style="background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:9px;display:flex;justify-content:space-between">
+                  <b>Random Forest</b><span style="color:#10b981;font-weight:700">91.4% Complete</span>
+                </div>
+                <div style="background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:9px;display:flex;justify-content:space-between">
+                  <b>Logistic Regression</b><span style="color:#3b82f6;font-weight:700">88.6% Complete</span>
+                </div>
+                <div style="background:#f8fafc;padding:4px 8px;border-radius:8px;font-size:9px;display:flex;justify-content:space-between">
+                  <b>Decision Tree</b><span style="color:#3b82f6;font-weight:700">87.2% Complete</span>
+                </div>
+              </div>
+            </div>
+            <!-- Top Factors -->
+            <div style="padding:6px 12px 0">
+              <div style="font-size:10px;font-weight:700;margin-bottom:4px">Top factors</div>
+              <div style="display:flex;flex-direction:column;gap:3px;font-size:8.5px">
+                <div style="display:flex;justify-content:space-between"><span>Monthly Spend</span><div style="width:50%;background:#e2e8f0;border-radius:4px"><div style="width:85%;height:6px;background:#3b82f6;border-radius:4px"></div></div></div>
+                <div style="display:flex;justify-content:space-between"><span>Tenure</span><div style="width:50%;background:#e2e8f0;border-radius:4px"><div style="width:68%;height:6px;background:#6366f1;border-radius:4px"></div></div></div>
+                <div style="display:flex;justify-content:space-between"><span>Contract Type</span><div style="width:50%;background:#e2e8f0;border-radius:4px"><div style="width:52%;height:6px;background:#8b5cf6;border-radius:4px"></div></div></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-around;padding:6px 0;margin-top:auto;border-top:1px solid #f1f5f9;font-size:9px;color:#94a3b8">
+              <span>Overview</span><span>Profile</span><span>Clean</span><span>Explore</span><span style="color:#2563eb;font-weight:700">Models</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- FLOATING FEATURE CARDS (SCENE 1) -->
+        <div class="fcard" id="c1" style="right:-35px;top:240px;width:245px">
+          <div class="ficon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          </div>
+          <div class="ftext">Profile every column, type and distribution</div>
+        </div>
+        <div class="fcard" id="c2" style="right:-15px;top:360px;width:240px">
+          <div class="ficon">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <div class="ftext" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span>Data quality score with a clear breakdown</span>
+            <span class="prem-tag">Technical Details</span>
+          </div>
+        </div>
+
+        <!-- FLOATING FEATURE CARDS (SCENE 2: PURPLE GRADIENT) -->
+        <div class="fcard" id="d1" style="right:-30px;top:155px;width:245px;background:linear-gradient(135deg,#7c3aed,#db2777);opacity:0">
+          <div class="ficon">✨</div>
+          <div class="ftext">Handle missing values with mean, median or deletion</div>
+        </div>
+        <div class="fcard" id="d2" style="right:-15px;top:275px;width:240px;background:linear-gradient(135deg,#6d28d9,#c026d3);opacity:0">
+          <div class="ficon">❐</div>
+          <div class="ftext">Detect duplicate records automatically</div>
+        </div>
+        <div class="fcard" id="d3" style="right:-25px;top:395px;width:245px;background:linear-gradient(135deg,#5b21b6,#a21caf);opacity:0">
+          <div class="ficon">⚡</div>
+          <div class="ftext">Find outliers with Z-score and IQR methods</div>
+        </div>
+
+        <!-- FLOATING FEATURE CARDS (SCENE 3: NAVY INDIGO GRADIENT) -->
+        <div class="fcard" id="e1" style="right:-30px;top:155px;width:240px;background:linear-gradient(135deg,#1e1b4b,#312e81);opacity:0">
+          <div class="ficon">📊</div>
+          <div class="ftext">Distributions, relationships and correlations</div>
+        </div>
+        <div class="fcard" id="e2" style="right:-15px;top:275px;width:245px;background:linear-gradient(135deg,#1e1b78,#3730a3);opacity:0">
+          <div class="ficon">🤖</div>
+          <div class="ftext">Classification and regression models compared automatically</div>
+        </div>
+        <div class="fcard" id="e3" style="right:-25px;top:395px;width:240px;background:linear-gradient(135deg,#172554,#1e40af);opacity:0">
+          <div class="ficon">📈</div>
+          <div class="ftext">Clear metrics: accuracy, F1, MAE, RMSE, R²</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY YOU CAN VERIFY SECTION -->
+<section class="w" style="padding:80px 0 60px;text-align:center">
+  <h2>Privacy you can verify</h2>
+  <p class="sub" style="margin:10px auto 36px;max-width:55ch">Your dataset is processed in memory and is not retained after the analysis session.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:880px;margin:0 auto;text-align:left">
+    <div style="background:#f8fafc;padding:32px;border-radius:24px;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <b style="font-size:18px;color:#0f172a">Privacy-first analysis</b>
+        <p style="font-size:13px;color:#64748b;margin-top:8px;line-height:1.5">Files are analyzed in memory during your session. Nothing is kept afterwards.</p>
+        <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+          <span style="background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;color:#334155">In-memory processing</span>
+          <span style="background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;color:#334155">Z-score & Tukey IQR</span>
+          <span style="background:#fff;border:1px solid #cbd5e1;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;color:#334155">5-fold validation</span>
+        </div>
+      </div>
+      <button class="btn" style="margin-top:28px;align-self:flex-start">Read how it works →</button>
+    </div>
+    <div style="background:#f8fafc;padding:32px;border-radius:24px;border:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <b style="font-size:18px;color:#0f172a">Technical transparency</b>
+        <p style="font-size:13px;color:#64748b;margin-top:8px;line-height:1.5">Every method is visible: formulas, parameters, validation strategy and processing details.</p>
+      </div>
+      <button class="btn" style="margin-top:28px;align-self:flex-start">View Technical Details →</button>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS SECTION -->
+<section class="tpin" id="tp">
+  <div class="tstage w">
+    <div>
+      <h2>Built for everyone<br>who works with data.</h2>
+      <p class="sub">Different roles, one workspace.</p>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="deck" id="deck"></div>
+  </div>
+</section>
+
+<!-- COMMUNITY SECTION -->
+<section class="w love">
+  <h2>Everything in one workspace.</h2>
+  <p class="sub" style="margin:12px auto 0;max-width:38ch">From first upload to final report.</p>
+  <div class="cards" id="cards">
+    <div class="cc" data-r="-6" data-s=".05" style="left:0;top:20px;width:210px;background:linear-gradient(140deg,#16135f,#4b2a9a);color:#fff">
+      Demo Dataset<small>Explore the platform instantly with sample data.</small><button class="btn w2">Try the demo →</button>
+    </div>
+    <div class="cc" data-r="5" data-s="-.04" style="right:0;top:0;width:190px;background:#f4f4f8">
+      Model Comparison<small>See which model performs best and why.</small><button class="btn">View comparison →</button>
+    </div>
+    <div class="cc" data-r="-4" data-s=".08" style="left:170px;top:120px;width:200px;background:#f4f4f8">
+      Automated EDA<small>Distributions, correlations and insights.</small>
+    </div>
+    <div class="cc" data-r="-8" data-s="-.06" style="left:10px;top:250px;width:170px;background:#7c6cff;color:#fff">
+      5<small>Steps from upload to insight</small><button class="btn w2">See workflow →</button>
+    </div>
+    <div class="cc" data-r="8" data-s=".03" style="right:0;top:250px;width:170px;background:linear-gradient(140deg,#2a2fd6,#16135f);color:#fff">
+      Export Report<small>Download insights and results for your team.</small><button class="btn w2">Learn more →</button>
+    </div>
+  </div>
+  <div style="margin:24px 0 10px;text-align:center;font-size:12px;font-weight:700;color:#64748b">
+    <span style="margin:0 12px;cursor:pointer">Help Center</span> • <span style="margin:0 12px;cursor:pointer">System Status</span>
+  </div>
+  <div class="ban api" style="text-align:left">
+    <div>
+      <span class="tag">Data Pipeline</span>
+      <h3>From raw file to model-ready data</h3>
+      <p>Upload once. Get profiling, cleaning, exploration and model results from the same workspace.</p>
+      <button class="btn w2">Start with Your Dataset</button>
+    </div>
+    <div class="stack"><i></i><i></i><i></i></div>
+  </div>
+  <div class="ban blog" style="text-align:left">
+    <div>
+      <span class="tag">Guides & Methods</span>
+      <h3>Learn the methods</h3>
+      <p>Short guides on data quality, outliers, missing values and model evaluation.</p>
+      <button class="btn w2">Read the guides</button>
+    </div>
+    <div class="horn"></div>
+  </div>
+</section>
+
+<!-- FAQ SECTION -->
+<section class="faq">
+  <h2>FAQ</h2>
+  <div class="grp">
+    <details><summary>Is my data safe?</summary><p>Your dataset is processed in memory during analysis and is not retained after the session.</p></details>
+    <details><summary>Which file formats are supported?</summary><p>CSV, XLSX and XLS files.</p></details>
+    <details><summary>How is the data quality score calculated?</summary><p>It combines the share of missing values and duplicate records into a single score. Full formula in Technical Details.</p></details>
+  </div>
+  <div class="grp">
+    <details><summary>How are outliers detected?</summary><p>With Z-score or Tukey IQR methods. You review them before anything is changed.</p></details>
+    <details><summary>Which models are compared?</summary><p>Classification and regression models such as Random Forest, XGBoost, Decision Tree and Logistic Regression, ranked by validation performance.</p></details>
+    <details><summary>Do I need to know statistics?</summary><p>No. Each step uses plain language, and technical details are available when you want them.</p></details>
+  </div>
+</section>
+
+<!-- CALL TO ACTION -->
+<div class="cta">
+  <h2>Analyze Your First<br>Dataset</h2>
+  <p>Private, automated and built for real analysis.</p>
+  <button class="btn w2">Start with Your Dataset</button>
+</div>
+
+<!-- FOOTER -->
+<footer class="w">
+  <div>
+    <span class="logo" style="display:inline-block">Smart Data Analyst</span>
+    <p style="font-size:11px;color:#94a3b8;margin-top:6px">© 2026 Smart Data Analyst. All rights reserved.</p>
+  </div>
+  <div><b>PRODUCT</b><span>Overview</span><span>Understand Your Data</span><span>Clean Your Data</span><span>Explore Your Data</span><span>Build & Compare Models</span></div>
+  <div><b>SUPPORT</b><span>Help Center</span><span>System Status</span><span>Technical Details</span></div>
+  <div><b>LEGAL</b><span>Privacy</span><span>Terms</span></div>
+</footer>
+
+<!-- COOKIE BANNER -->
+<div class="cookie" id="cookieBanner">
+  <span>We use cookies to improve your experience and analyze site traffic.</span>
+  <span style="display:flex;gap:14px;align-items:center">
+    <span style="cursor:pointer" onclick="document.getElementById('cookieBanner').style.display='none'">Reject</span>
+    <button class="btn" onclick="document.getElementById('cookieBanner').style.display='none'">Accept</button>
+  </span>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (p, a, b) => clamp((p - a) / (b - a));
+const ease = t => 1 - Math.pow(1 - t, 3);
+const prog = el => {
+  if (!el) return 0;
+  const r = el.getBoundingClientRect();
+  const denom = r.height - window.innerHeight;
+  return denom <= 0 ? 0 : clamp(-r.top / denom);
+};
+
+// Populate chips with data type labels
+const chipsEl = $('#chips');
+const chipData = [
+  { name: 'CSV', icon: '📄' },
+  { name: 'XLSX', icon: '📊' },
+  { name: 'XLS', icon: '📈' },
+  { name: 'Numeric', icon: '#' },
+  { name: 'Categorical', icon: '🏷' },
+  { name: 'Date', icon: '📅' },
+  { name: 'Text', icon: 'Aa' },
+  { name: '+ more types', icon: '', isMore: true }
+];
+chipsEl.innerHTML = '';
+chipData.forEach(c => {
+  const span = document.createElement('span');
+  span.className = 'chip' + (c.isMore ? ' chip-more' : '');
+  span.innerHTML = (c.icon ? `<span style="font-size:11px">${c.icon}</span> ` : '') + c.name;
+  chipsEl.appendChild(span);
+});
+const chipList = [...chipsEl.children];
+
+// Use-case cards
+const revs = [
+  ['#3b82f6', 'Analysts: profile and clean a dataset in minutes.', 'Data Analyst'],
+  ['#f472b6', 'Data scientists: benchmark models before building your own.', 'Data Scientist'],
+  ['#111111', 'Business teams: understand your data without writing code.', 'Business Operations'],
+  ['#a855f7', 'Students: learn statistical methods with clear explanations.', 'Student / Learner'],
+  ['#6366f1', 'Researchers: check data quality before analysis.', 'Academic Researcher'],
+  ['#0ea5e9', 'Interview portfolios: show a complete data workflow.', 'Portfolio Builder']
+];
+const deck = $('#deck'), dots = $('#dots');
+revs.forEach(([c, t, u]) => {
+  const d = document.createElement('div');
+  d.className = 'rev';
+  d.style.background = c;
+  d.innerHTML = `<span>${t}</span><small>${u}</small>`;
+  deck.appendChild(d);
+  dots.appendChild(document.createElement('i'));
+});
+const revEls = [...deck.children], dotEls = [...dots.children], cc = [...document.querySelectorAll('.cc')];
+
+// Navigation buttons
+$('#heroSeeHowBtn')?.addEventListener('click', () => {
+  $('#story')?.scrollIntoView({ behavior: 'smooth' });
+});
+
+// Interactive 3D Cursor Tilt for Mobile Phones
+function attachPhoneHoverTilt(phone) {
+  if (!phone) return;
+  let isHovered = false;
+
+  phone.addEventListener('mouseenter', () => {
+    isHovered = true;
+    phone.style.transition = 'transform 0.1s cubic-bezier(0.16, 1, 0.3, 1)';
+  });
+
+  phone.addEventListener('mousemove', (e) => {
+    const rect = phone.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    const ry = -8 + (x * 24);
+    const rx = 4 + (-y * 20);
+    phone.style.transform = `perspective(1000px) rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg) scale(1.03)`;
+  });
+
+  phone.addEventListener('mouseleave', () => {
+    isHovered = false;
+    phone.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+    phone.style.transform = `perspective(1000px) rotateY(-8deg) rotateX(4deg) scale(1)`;
+  });
+
+  return () => isHovered;
+}
+
+const isHpHovered = attachPhoneHoverTilt($('#hp'));
+const isSpHovered = attachPhoneHoverTilt($('#sp'));
+
+// Interactive Testimonial Carousel Deck - Click to smooth scroll
+dotEls.forEach((d, i) => {
+  d.addEventListener('click', () => {
+    const tp = $('#tp');
+    if (!tp) return;
+    const r = tp.getBoundingClientRect();
+    const tpTop = window.scrollY + r.top;
+    const denom = r.height - window.innerHeight;
+    if (denom > 0) {
+      const targetScroll = tpTop + (i / Math.max(1, revEls.length - 1)) * denom;
+      window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    }
+  });
+});
+
+// Smooth scroll frame handler
+function frame() {
+  const innerH = window.innerHeight;
+  const h = clamp(window.scrollY / innerH);
+
+  // Hero phone resting tilt (only updates if not hovering)
+  const hp = $('#hp');
+  if (hp && (!isHpHovered || !isHpHovered())) {
+    hp.style.transform = `perspective(1200px) rotateY(${-8 + h * 2}deg) rotateX(${4 - h * 1.5}deg) scale(1)`;
+  }
+  const hl = $('#hl'), hn = $('#hn'), hr = $('#hr');
+  if (hl) hl.style.transform = `rotate(${-14 + h * 8}deg) translate(${-h * 30}px,${h * 40}px)`;
+  if (hn) hn.style.transform = `rotate(${14 - h * 6}deg) translate(${h * 15}px,${-h * 30}px)`;
+  if (hr) hr.style.transform = `rotate(${8 - h * 5}deg) translate(${h * 40}px,${-h * 20}px)`;
+
+  // PINNED STORY SECTION - Slower, smoother, highly readable
+  const p = prog($('#story'));
+
+  // Semicircular Arc trajectory from left to right behind the mobile phone
+  const arcAngle = p * Math.PI;
+  const arcY = -Math.sin(arcAngle) * 90; // Arches upward at center, then back down
+  
+  // Phase 1 (0 -> 0.38)
+  const inA = ease(seg(p, 0, 0.12));
+  const outA = seg(p, 0.35, 0.44);
+  const pAx = -130 + p * 220;
+  const pAy = -Math.sin(clamp(p * 1.5)) * 65;
+  $('#pA').style.opacity = inA * (1 - outA);
+  $('#pA').style.transform = `translate(${pAx}px, ${pAy}px) rotate(${-15 + p * 20}deg)`;
+
+  // Multichain Chips sweep along arc
+  chipsEl.style.opacity = inA * (1 - outA);
+  chipsEl.style.transform = `translate(${p * 40}px, ${-Math.sin(arcAngle) * 25}px) rotate(${6 + p * 4}deg)`;
+  chipList.forEach((c, i) => {
+    const t = ease(seg(p, 0.04 + i * 0.02, 0.12 + i * 0.02));
+    c.style.opacity = t;
+    c.style.transform = `translateY(${(1 - t) * 16}px) scale(${0.8 + t * 0.2})`;
+  });
+
+  // Feature cards 1 & 2 - VISIBLE ON TOP OF PHONE
+  [['#c1', 0.08], ['#c2', 0.15]].forEach(([id, s]) => {
+    const el = $(id);
+    if (el) {
+      const t = ease(seg(p, s, s + 0.10)) * (1 - outA);
+      el.style.opacity = t;
+      el.style.transform = `translateX(${(1 - t) * 28}px)`;
+    }
+  });
+
+  // Copy 1 (In-place cross-fade, no upward drift)
+  const o1 = seg(p, 0.34, 0.44);
+  $('#t1').style.opacity = 1 - o1;
+  $('#t1').style.transform = `translateY(${-o1 * 10}px)`;
+
+  // Phase 2 (0.36 -> 0.72)
+  const inB = ease(seg(p, 0.36, 0.46));
+  const outB = seg(p, 0.65, 0.74);
+  const i2 = seg(p, 0.36, 0.46);
+  const o2 = seg(p, 0.65, 0.74);
+  $('#t2').style.opacity = i2 * (1 - o2);
+  $('#t2').style.transform = `translateY(${(1 - i2) * 10 - o2 * 10}px)`;
+
+  // #pB Sweeps through the peak of the semicircular arc from left to right
+  const pBx = -90 + p * 240;
+  $('#pB').style.opacity = inB * (1 - outB);
+  $('#pB').style.transform = `translate(${pBx}px, ${arcY}px) rotate(${-12 + p * 24}deg)`;
+
+  // Swap Screen on phone
+  const s2Op = seg(p, 0.36, 0.46) * (1 - seg(p, 0.66, 0.74));
+  $('#s2').style.opacity = s2Op;
+
+  // Feature cards 3, 4, 5 - VISIBLE ON TOP OF PHONE
+  [['#d1', 0], ['#d2', 1], ['#d3', 2]].forEach(([id, i]) => {
+    const el = $(id);
+    if (el) {
+      const t = ease(seg(p, 0.40 + i * 0.05, 0.50 + i * 0.05)) * (1 - outB);
+      el.style.opacity = t;
+      el.style.transform = `translateX(${(1 - t) * 28}px)`;
+    }
+  });
+
+  // Phase 3 (0.70 -> 1.0)
+  const inC = ease(seg(p, 0.70, 0.80));
+  $('#t3').style.opacity = inC;
+  $('#t3').style.transform = `translateY(${(1 - inC) * 10}px)`;
+
+  // #pC finishes the arc sweep on the right
+  const pCx = -40 + p * 200;
+  const pCy = -Math.sin(clamp((p - 0.2) * 1.25)) * 75;
+  $('#pC').style.opacity = inC;
+  $('#pC').style.transform = `translate(${pCx}px, ${pCy}px) rotate(${-6 + p * 20}deg)`;
+
+  // Explore Screen on phone
+  const s3Op = seg(p, 0.70, 0.80);
+  $('#s3').style.opacity = s3Op;
+
+  // Feature cards e1, e2, e3 - VISIBLE ON TOP OF PHONE
+  [['#e1', 0], ['#e2', 1], ['#e3', 2]].forEach(([id, i]) => {
+    const el = $(id);
+    if (el) {
+      const t = ease(seg(p, 0.72 + i * 0.05, 0.82 + i * 0.05));
+      el.style.opacity = t;
+      el.style.transform = `translateX(${(1 - t) * 28}px)`;
+    }
+  });
+
+  // Pinned Phone resting tilt (only updates if not hovering)
+  const sp = $('#sp');
+  if (sp && (!isSpHovered || !isSpHovered())) {
+    sp.style.transform = `perspective(1200px) rotateY(${-8 + p * 2}deg) rotateX(${4 - p * 1.5}deg) scale(1)`;
+  }
+
+  // TESTIMONIALS PINNED SECTION - SCROLL-DRIVEN 3D STACK SHUFFLE (FRONT TO BACK)
+  const tp = $('#tp');
+  const numRevs = revEls.length;
+  if (tp && numRevs > 0) {
+    const tpProg = prog(tp);
+    const scrollPos = tpProg * (numRevs - 1);
+    const currIdx = Math.floor(scrollPos);
+    const frac = scrollPos - currIdx;
+
+    revEls.forEach((el, i) => {
+      if (i < currIdx) {
+        // Card has already peeled off to the back of the stack
+        el.style.transform = `translateX(-140%) rotate(-10deg) scale(0.9)`;
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '1';
+      } else if (i === currIdx) {
+        // Front card peeling off and moving to back as user scrolls
+        const tx = -frac * 135;
+        const rot = -frac * 8;
+        const scale = 1 - frac * 0.05;
+        const op = 1 - frac * 0.8;
+        el.style.transform = `translateX(${tx}%) rotate(${rot}deg) scale(${scale})`;
+        el.style.opacity = String(Math.max(0, op));
+        el.style.pointerEvents = frac > 0.5 ? 'none' : 'auto';
+        el.style.zIndex = '50';
+      } else if (i === currIdx + 1) {
+        // Next card advancing from behind to the front of the stack
+        const d = 1 - frac; // 1 down to 0
+        const tx = d * 32;
+        const scale = 1 - d * 0.05;
+        el.style.transform = `translateX(${tx}px) scale(${scale})`;
+        el.style.opacity = '1';
+        el.style.pointerEvents = frac > 0.5 ? 'auto' : 'none';
+        el.style.zIndex = '40';
+      } else {
+        // Remaining cards waiting behind in the stack
+        const d = i - scrollPos;
+        const offset = Math.min(d, 3) * 32;
+        const scale = Math.max(0.85, 1 - d * 0.05);
+        el.style.transform = `translateX(${offset}px) scale(${scale})`;
+        el.style.opacity = d > 2.5 ? '0' : '1';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = String(30 - i);
+      }
+    });
+
+    const activeDot = Math.min(numRevs - 1, Math.round(scrollPos));
+    dotEls.forEach((d, idx) => d.classList.toggle('on', idx === activeDot));
+  }
+
+  // Community cards parallax
+  cc.forEach(t => {
+    const r = t.getBoundingClientRect();
+    const o = r.top + r.height / 2 - innerH / 2;
+    const k = clamp(1 - Math.abs(o) / innerH);
+    t.style.transform = `translateY(${o * parseFloat(t.dataset.s || 0)}px) rotate(${parseFloat(t.dataset.r || 0) * (0.4 + 0.6 * k)}deg)`;
+  });
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
